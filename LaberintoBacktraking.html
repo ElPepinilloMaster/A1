@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Visualizador Avanzado de Backtracking | Editor y Heurísticas</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-main: #080c14;
+            --bg-card: rgba(15, 23, 42, 0.88);
+            --bg-card-border: rgba(255, 255, 255, 0.08);
+            --text-title: #f8fafc;
+            --text-body: #94a3b8;
+            --text-muted: #64748b;
+            --accent-cyan: #06b6d4;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-emerald: #10b981;
+            --accent-rose: #f43f5e;
+            --accent-amber: #f59e0b;
+            --wall-color: #111827;
+            --path-color: #030712;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-body);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 15%, rgba(6, 182, 212, 0.09) 0%, transparent 40%),
+                radial-gradient(circle at 90% 85%, rgba(139, 92, 246, 0.09) 0%, transparent 45%);
+        }
+
+        /* Header */
+        header {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--bg-card-border);
+            backdrop-filter: blur(14px);
+            background: rgba(8, 12, 20, 0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.35);
+        }
+
+        .brand-text h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.15rem;
+            color: var(--text-title);
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-text span {
+            font-size: 0.72rem;
+            color: var(--accent-cyan);
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .badge-mode {
+            padding: 5px 12px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--accent-emerald);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--accent-emerald);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-emerald);
+        }
+
+        /* Layout Principal */
+        main {
+            flex: 1;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: 390px 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+        }
+
+        /* Paneles */
+        .glass-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--bg-card-border);
+            border-radius: 16px;
+            padding: 1.25rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .panel-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-title);
+            margin-bottom: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .panel-title svg {
+            color: var(--accent-cyan);
+            flex-shrink: 0;
+        }
+
+        .controls-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 1.15rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+            font-size: 0.78rem;
+        }
+
+        /* Botones de tamaño */
+        .size-selector-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+        }
+
+        .btn-size {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--bg-card-border);
+            color: var(--text-body);
+            padding: 7px 2px;
+            border-radius: 8px;
+            font-size: 0.74rem;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .btn-size:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        .btn-size.active {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            font-weight: 700;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.25);
+        }
+
+        /* Selectores de estilo y algoritmo */
+        select.custom-select {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--bg-card-border);
+            color: #f1f5f9;
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            outline: none;
+            width: 100%;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        select.custom-select:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        /* Botones de Herramientas de Edición */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .btn-tool {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--bg-card-border);
+            color: var(--text-body);
+            padding: 8px 6px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .btn-tool:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        .btn-tool.active {
+            background: rgba(139, 92, 246, 0.18);
+            border-color: var(--accent-purple);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+            font-weight: 700;
+        }
+
+        /* Sliders */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.8);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Botones de Acción Primarios */
+        .action-buttons-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 0.3rem;
+        }
+
+        .btn-primary {
+            grid-column: span 2;
+            background: linear-gradient(135deg, #06b6d4, #2563eb);
+            color: #ffffff;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.92rem;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(6, 182, 212, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(6, 182, 212, 0.5);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--bg-card-border);
+            color: #d1d5db;
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Prioridad de Direcciones */
+        .priority-badges-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .priority-badge {
+            flex: 1;
+            padding: 6px 4px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--bg-card-border);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            color: #93c5fd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        /* Métricas */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .metric-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--bg-card-border);
+            border-radius: 8px;
+            padding: 9px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+
+        .metric-val.highlight { color: var(--accent-cyan); }
+        .metric-val.backtrack { color: var(--accent-rose); }
+
+        /* Lienzo del Laberinto */
+        .maze-viewport-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--bg-card-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(12px);
+            min-height: 540px;
+        }
+
+        .status-banner {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 14px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            border: 1px solid var(--bg-card-border);
+            font-size: 0.82rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .status-text {
+            color: var(--accent-cyan);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 8px var(--accent-cyan); }
+            100% { transform: scale(0.9); opacity: 0.7; }
+        }
+
+        .canvas-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 12px;
+            background: var(--path-color);
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.9);
+            padding: 12px;
+            user-select: none;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            border-radius: 8px;
+            image-rendering: pixelated;
+            cursor: crosshair;
+        }
+
+        .editor-hint {
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Leyenda */
+        .legend-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 18px;
+            padding-top: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: #cbd5e1;
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            box-shadow: 0 0 6px rgba(0,0,0,0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="brand-container">
+            <div class="brand-icon">BT</div>
+            <div class="brand-text">
+                <h1>Backtracking Laberintos Pro</h1>
+                <span>Editor en Tiempo Real & Heurísticas de Prioridad</span>
+            </div>
+        </div>
+        <div class="badge-mode">
+            <div class="badge-dot" id="header-dot"></div>
+            <span id="header-mode-text">Listo para interactuar</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- Panel Lateral de Controles -->
+        <aside class="controls-stack">
+            <!-- 1. Dimensiones y Tipo de Laberinto -->
+            <div class="glass-panel">
+                <div class="panel-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="9" y1="21" x2="9" y2="9"></line>
+                    </svg>
+                    Dimensiones y Tipo
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">
+                        <span>Tamaño de la Cuadrícula</span>
+                        <span class="control-value" id="label-size">21 × 21</span>
+                    </label>
+                    <div class="size-selector-grid">
+                        <button class="btn-size" data-size="9">9×9</button>
+                        <button class="btn-size" data-size="15">15×15</button>
+                        <button class="btn-size active" data-size="21">21×21</button>
+                        <button class="btn-size" data-size="29">29×29</button>
+                        <button class="btn-size" data-size="39">39×39</button>
+                        <button class="btn-size" data-size="49">49×49</button>
+                    </div>
+                </div>
+
+                <div class="control-group" style="margin-top: 0.9rem;">
+                    <label class="control-label">
+                        <span>Generador de Laberinto</span>
+                    </label>
+                    <select class="custom-select" id="select-maze-type">
+                        <option value="dfs">DFS Clásico (Pasillos largos y sinuosos)</option>
+                        <option value="prim">Algoritmo de Prim (Altamente ramificado)</option>
+                        <option value="obstacles">Caverna / Obstáculos (Salas abiertas y ciclos)</option>
+                        <option value="spiral">Espiral Concéntrico (Geométrico)</option>
+                        <option value="empty">Lienzo Vacío (Dibuja tu propio laberinto)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 2. Editor Manual de Bloques -->
+            <div class="glass-panel">
+                <div class="panel-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Herramienta de Dibujo Manual
+                </div>
+
+                <div class="control-group">
+                    <div class="tools-grid">
+                        <button class="btn-tool active" data-tool="wall" id="tool-wall">
+                            <span style="font-size: 1.1rem;">🧱</span>
+                            <span>Muro</span>
+                        </button>
+                        <button class="btn-tool" data-tool="passage" id="tool-passage">
+                            <span style="font-size: 1.1rem;">🧽</span>
+                            <span>Pasaje</span>
+                        </button>
+                        <button class="btn-tool" data-tool="start" id="tool-start">
+                            <span style="font-size: 1.1rem;">🟢</span>
+                            <span>Inicio</span>
+                        </button>
+                        <button class="btn-tool" data-tool="end" id="tool-end">
+                            <span style="font-size: 1.1rem;">🏁</span>
+                            <span>Meta</span>
+                        </button>
+                    </div>
+                    <span class="editor-hint">
+                        💡 Haz clic o arrastra sobre el lienzo para colocar o quitar bloques.
+                    </span>
+                </div>
+            </div>
+
+            <!-- 3. Prioridad del Backtracking (Heurística) -->
+            <div class="glass-panel">
+                <div class="panel-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                    </svg>
+                    Prioridad de Búsqueda (Heurística)
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">
+                        <span>Estrategia de Decisión</span>
+                    </label>
+                    <select class="custom-select" id="select-priority">
+                        <option value="greedy">🎯 Voraz / Guiada a la Meta (Hacia la Meta)</option>
+                        <option value="clockwise">🕒 Sentido Horario (Der ➔ Abajo ➔ Izq ➔ Arr)</option>
+                        <option value="counter">🔄 Sentido Antihorario (Abajo ➔ Der ➔ Arr ➔ Izq)</option>
+                        <option value="vertical">⬇️ Vertical Primero (Abajo ➔ Arr ➔ Der ➔ Izq)</option>
+                        <option value="horizontal">➔ Horizontal Primero (Der ➔ Izq ➔ Abajo ➔ Arr)</option>
+                        <option value="random">🎲 Aleatoria (Shuffle por cada bifurcación)</option>
+                    </select>
+
+                    <div class="priority-badges-row" id="priority-order-display">
+                        <div class="priority-badge">1° Meta</div>
+                        <div class="priority-badge">2° Lateral</div>
+                        <div class="priority-badge">3° Opuesto</div>
+                        <div class="priority-badge">4° Alejarse</div>
+                    </div>
+                </div>
+
+                <!-- Velocidad -->
+                <div class="control-group" style="margin-top: 0.9rem;">
+                    <label class="control-label">
+                        <span>Velocidad de Simulación</span>
+                        <span class="control-value" id="label-speed">Rápido (20ms)</span>
+                    </label>
+                    <input type="range" id="slider-speed" min="1" max="100" value="20" step="1">
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="action-buttons-grid">
+                    <button class="btn-primary" id="btn-start">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Iniciar Backtracking
+                    </button>
+                    <button class="btn-secondary" id="btn-generate">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                        </svg>
+                        Recargar
+                    </button>
+                    <button class="btn-secondary" id="btn-clear">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                        Limpiar Ruta
+                    </button>
+                </div>
+            </div>
+
+            <!-- Métricas -->
+            <div class="glass-panel">
+                <div class="panel-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                    </svg>
+                    Métricas de Ejecución
+                </div>
+                <div class="metrics-grid">
+                    <div class="metric-box">
+                        <span class="metric-label">Pasos Evaluados</span>
+                        <span class="metric-val highlight" id="metric-steps">0</span>
+                    </div>
+                    <div class="metric-box">
+                        <span class="metric-label">Retrocesos</span>
+                        <span class="metric-val backtrack" id="metric-backtracks">0</span>
+                    </div>
+                    <div class="metric-box">
+                        <span class="metric-label">Pila Recursiva</span>
+                        <span class="metric-val" id="metric-stack">0</span>
+                    </div>
+                    <div class="metric-box">
+                        <span class="metric-label">Ruta Final</span>
+                        <span class="metric-val" id="metric-solution">-</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Columna Derecha: Lienzo del Laberinto y Leyenda -->
+        <section class="maze-viewport-card">
+            <div class="status-banner">
+                <div class="status-text" id="status-label">
+                    <div class="status-dot-pulse" id="status-indicator"></div>
+                    <span id="status-message">Modo edición activo. Puedes pintar muros o pulsar Iniciar.</span>
+                </div>
+                <span style="color: var(--text-muted); font-size: 0.75rem;" id="timer-label">0.00s</span>
+            </div>
+
+            <div class="canvas-container" id="canvas-wrapper">
+                <canvas id="maze-canvas" width="600" height="600"></canvas>
+            </div>
+
+            <!-- Leyenda Cromática -->
+            <div class="legend-row">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #10b981;"></div>
+                    <span>🟢 Inicio</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f59e0b;"></div>
+                    <span>🏁 Meta</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #06b6d4;"></div>
+                    <span>Pila Activa (DFS)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f43f5e;"></div>
+                    <span>Retroceso (Descartado)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #a855f7;"></div>
+                    <span>Ruta Solución</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #111827; border: 1px solid rgba(255,255,255,0.15);"></div>
+                    <span>Pared / Muro</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // ==================== ESTADO GLOBAL ====================
+        const canvas = document.getElementById('maze-canvas');
+        const ctx = canvas.getContext('2d');
+        const canvasWrapper = document.getElementById('canvas-wrapper');
+
+        const CELL_WALL = 1;
+        const CELL_PASSAGE = 0;
+        const CELL_VISITED_PATH = 2;
+        const CELL_BACKTRACKED = 3;
+        const CELL_SOLUTION = 4;
+
+        let mazeSize = 21;
+        let maze = [];
+        let isSolving = false;
+        let shouldStop = false;
+        let animationDelay = 20;
+
+        let startPos = { r: 1, c: 1 };
+        let endPos = { r: mazeSize - 2, c: mazeSize - 2 };
+
+        // Herramientas de Edición Manual
+        let currentTool = 'wall'; // 'wall', 'passage', 'start', 'end'
+        let isDrawing = false;
+        let hoveredCell = null;
+
+        // Métricas
+        let stepsCount = 0;
+        let backtracksCount = 0;
+        let startTime = 0;
+        let timerInterval = null;
+
+        // Referencias DOM
+        const btnStart = document.getElementById('btn-start');
+        const btnGenerate = document.getElementById('btn-generate');
+        const btnClear = document.getElementById('btn-clear');
+        const sliderSpeed = document.getElementById('slider-speed');
+        const labelSpeed = document.getElementById('label-speed');
+        const labelSize = document.getElementById('label-size');
+        const sizeButtons = document.querySelectorAll('.btn-size');
+        const toolButtons = document.querySelectorAll('.btn-tool');
+        const selectMazeType = document.getElementById('select-maze-type');
+        const selectPriority = document.getElementById('select-priority');
+        const priorityDisplay = document.getElementById('priority-order-display');
+
+        const metricSteps = document.getElementById('metric-steps');
+        const metricBacktracks = document.getElementById('metric-backtracks');
+        const metricStack = document.getElementById('metric-stack');
+        const metricSolution = document.getElementById('metric-solution');
+        const statusMessage = document.getElementById('status-message');
+        const statusIndicator = document.getElementById('status-indicator');
+        const timerLabel = document.getElementById('timer-label');
+        const headerModeText = document.getElementById('header-mode-text');
+
+        // Web Audio API para efectos sutiles
+        let audioCtx = null;
+        function playStepSound(type) {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                if (type === 'step') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(280, now + 0.02);
+                    gain.gain.setValueAtTime(0.03, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+                    osc.start(now);
+                    osc.stop(now + 0.02);
+                } else if (type === 'backtrack') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(130, now + 0.035);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+                    osc.start(now);
+                    osc.stop(now + 0.035);
+                } else if (type === 'win') {
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.type = 'sine';
+                        noteOsc.frequency.setValueAtTime(freq, now + i * 0.07);
+                        noteGain.gain.setValueAtTime(0.1, now + i * 0.07);
+                        noteGain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.07 + 0.3);
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        noteOsc.start(now + i * 0.07);
+                        noteOsc.stop(now + i * 0.07 + 0.3);
+                    });
+                    return;
+                }
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+            } catch (e) {}
+        }
+
+        // ==================== GENERADORES DE LABERINTOS ====================
+
+        // 1. DFS Clásico (Recursive Backtracker)
+        function generateDFS() {
+            maze = Array(mazeSize).fill(null).map(() => Array(mazeSize).fill(CELL_WALL));
+            const stack = [];
+            maze[startPos.r][startPos.c] = CELL_PASSAGE;
+            stack.push({ r: startPos.r, c: startPos.c });
+
+            const dirs = [
+                { dr: -2, dc: 0 }, { dr: 2, dc: 0 }, { dr: 0, dc: -2 }, { dr: 0, dc: 2 }
+            ];
+
+            while (stack.length > 0) {
+                const current = stack[stack.length - 1];
+                const neighbors = [];
+
+                for (let d of dirs) {
+                    const nr = current.r + d.dr;
+                    const nc = current.c + d.dc;
+                    if (nr > 0 && nr < mazeSize - 1 && nc > 0 && nc < mazeSize - 1 && maze[nr][nc] === CELL_WALL) {
+                        neighbors.push({ r: nr, c: nc, wallR: current.r + d.dr / 2, wallC: current.c + d.dc / 2 });
+                    }
+                }
+
+                if (neighbors.length > 0) {
+                    const chosen = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    maze[chosen.wallR][chosen.wallC] = CELL_PASSAGE;
+                    maze[chosen.r][chosen.c] = CELL_PASSAGE;
+                    stack.push({ r: chosen.r, c: chosen.c });
+                } else {
+                    stack.pop();
+                }
+            }
+        }
+
+        // 2. Algoritmo de Prim Aleatorio (Laberinto ramificado con pasillos cortos)
+        function generatePrim() {
+            maze = Array(mazeSize).fill(null).map(() => Array(mazeSize).fill(CELL_WALL));
+            const walls = [];
+
+            function addWalls(r, c) {
+                const dirs = [{ dr: -2, dc: 0 }, { dr: 2, dc: 0 }, { dr: 0, dc: -2 }, { dr: 0, dc: 2 }];
+                dirs.forEach(d => {
+                    const nr = r + d.dr;
+                    const nc = c + d.dc;
+                    if (nr > 0 && nr < mazeSize - 1 && nc > 0 && nc < mazeSize - 1 && maze[nr][nc] === CELL_WALL) {
+                        walls.push({
+                            fromR: r, fromC: c,
+                            toR: nr, toC: nc,
+                            wallR: r + d.dr / 2, wallC: c + d.dc / 2
+                        });
+                    }
+                });
+            }
+
+            maze[startPos.r][startPos.c] = CELL_PASSAGE;
+            addWalls(startPos.r, startPos.c);
+
+            while (walls.length > 0) {
+                const randIndex = Math.floor(Math.random() * walls.length);
+                const w = walls.splice(randIndex, 1)[0];
+
+                if (maze[w.toR][w.toC] === CELL_WALL) {
+                    maze[w.wallR][w.wallC] = CELL_PASSAGE;
+                    maze[w.toR][w.toC] = CELL_PASSAGE;
+                    addWalls(w.toR, w.toC);
+                }
+            }
+        }
+
+        // 3. Caverna / Obstáculos (Salas abiertas y múltiples rutas con ciclos)
+        function generateObstacles() {
+            // Fondo pasaje con muros perimetrales
+            maze = Array(mazeSize).fill(null).map((_, r) => 
+                Array(mazeSize).fill(null).map((_, c) => 
+                    (r === 0 || r === mazeSize - 1 || c === 0 || c === mazeSize - 1) ? CELL_WALL : CELL_PASSAGE
+                )
+            );
+
+            // Bloques de obstáculos aleatorios (~28% de densidad)
+            for (let r = 1; r < mazeSize - 1; r++) {
+                for (let c = 1; c < mazeSize - 1; c++) {
+                    if ((r === startPos.r && c === startPos.c) || (r === endPos.r && c === endPos.c)) continue;
+                    if (Math.random() < 0.28) {
+                        maze[r][c] = CELL_WALL;
+                    }
+                }
+            }
+
+            // Despejar el entorno inmediato de inicio y meta
+            [startPos, endPos].forEach(pos => {
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        const nr = pos.r + dr;
+                        const nc = pos.c + dc;
+                        if (nr > 0 && nr < mazeSize - 1 && nc > 0 && nc < mazeSize - 1) {
+                            maze[nr][nc] = CELL_PASSAGE;
+                        }
+                    }
+                }
+            });
+        }
+
+        // 4. Laberinto en Espiral Concéntrico
+        function generateSpiral() {
+            maze = Array(mazeSize).fill(null).map(() => Array(mazeSize).fill(CELL_PASSAGE));
+
+            // Borde exterior
+            for (let i = 0; i < mazeSize; i++) {
+                maze[0][i] = CELL_WALL;
+                maze[mazeSize - 1][i] = CELL_WALL;
+                maze[i][0] = CELL_WALL;
+                maze[i][mazeSize - 1] = CELL_WALL;
+            }
+
+            // Anillos concéntricos con aberturas
+            for (let ring = 2; ring < Math.floor(mazeSize / 2); ring += 2) {
+                for (let c = ring; c < mazeSize - ring; c++) {
+                    maze[ring][c] = CELL_WALL;
+                    maze[mazeSize - 1 - ring][c] = CELL_WALL;
+                }
+                for (let r = ring; r < mazeSize - ring; r++) {
+                    maze[r][ring] = CELL_WALL;
+                    maze[r][mazeSize - 1 - ring] = CELL_WALL;
+                }
+                // Aberturas en el anillo
+                const openPos = ring + 1;
+                if (openPos < mazeSize - 2) {
+                    maze[ring][openPos] = CELL_PASSAGE;
+                    maze[mazeSize - 1 - ring][mazeSize - 1 - openPos] = CELL_PASSAGE;
+                }
+            }
+        }
+
+        // 5. Lienzo Vacío (Para que el usuario dibuje totalmente a su gusto)
+        function generateEmpty() {
+            maze = Array(mazeSize).fill(null).map((_, r) => 
+                Array(mazeSize).fill(null).map((_, c) => 
+                    (r === 0 || r === mazeSize - 1 || c === 0 || c === mazeSize - 1) ? CELL_WALL : CELL_PASSAGE
+                )
+            );
+        }
+
+        function createMazeByType() {
+            const type = selectMazeType.value;
+            // Asegurar que inicio y meta estén dentro de los límites válidos
+            startPos = { r: 1, c: 1 };
+            endPos = { r: mazeSize - 2, c: mazeSize - 2 };
+
+            if (type === 'dfs') generateDFS();
+            else if (type === 'prim') generatePrim();
+            else if (type === 'obstacles') generateObstacles();
+            else if (type === 'spiral') generateSpiral();
+            else if (type === 'empty') generateEmpty();
+
+            maze[startPos.r][startPos.c] = CELL_PASSAGE;
+            maze[endPos.r][endPos.c] = CELL_PASSAGE;
+        }
+
+        // ==================== RENDERIZADO VISUAL ====================
+        function renderMaze(currentHead = null) {
+            const containerWidth = canvasWrapper.clientWidth - 24;
+            const displaySize = Math.min(Math.max(containerWidth, 270), 570);
+
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = displaySize * dpr;
+            canvas.height = displaySize * dpr;
+            canvas.style.width = `${displaySize}px`;
+            canvas.style.height = `${displaySize}px`;
+
+            ctx.resetTransform();
+            ctx.scale(dpr, dpr);
+
+            const cellSize = displaySize / mazeSize;
+
+            for (let r = 0; r < mazeSize; r++) {
+                for (let c = 0; c < mazeSize; c++) {
+                    const cell = maze[r][c];
+                    const x = c * cellSize;
+                    const y = r * cellSize;
+
+                    if (cell === CELL_WALL) {
+                        ctx.fillStyle = '#111827';
+                        ctx.fillRect(x, y, cellSize, cellSize);
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
+                        ctx.lineWidth = 0.5;
+                        ctx.strokeRect(x, y, cellSize, cellSize);
+                    } else if (cell === CELL_PASSAGE) {
+                        ctx.fillStyle = '#030712';
+                        ctx.fillRect(x, y, cellSize, cellSize);
+                    } else if (cell === CELL_VISITED_PATH) {
+                        ctx.fillStyle = '#06b6d4';
+                        ctx.fillRect(x, y, cellSize, cellSize);
+                    } else if (cell === CELL_BACKTRACKED) {
+                        ctx.fillStyle = '#f43f5e';
+                        ctx.fillRect(x, y, cellSize, cellSize);
+                    } else if (cell === CELL_SOLUTION) {
+                        ctx.fillStyle = '#a855f7';
+                        ctx.fillRect(x, y, cellSize, cellSize);
+                    }
+
+                    // Inicio (Verde)
+                    if (r === startPos.r && c === startPos.c) {
+                        ctx.fillStyle = '#10b981';
+                        ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+                    }
+
+                    // Meta (Dorado)
+                    if (r === endPos.r && c === endPos.c) {
+                        ctx.fillStyle = '#f59e0b';
+                        ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+                    }
+                }
+            }
+
+            // Resaltar celda bajo el cursor del mouse en modo edición
+            if (hoveredCell && !isSolving) {
+                const { r, c } = hoveredCell;
+                if (r >= 0 && r < mazeSize && c >= 0 && c < mazeSize) {
+                    ctx.strokeStyle = (currentTool === 'wall') ? 'rgba(244, 63, 94, 0.7)' :
+                                      (currentTool === 'passage') ? 'rgba(6, 182, 212, 0.7)' :
+                                      (currentTool === 'start') ? 'rgba(16, 185, 129, 0.9)' : 'rgba(245, 158, 11, 0.9)';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(c * cellSize + 1, r * cellSize + 1, cellSize - 2, cellSize - 2);
+                }
+            }
+
+            // Cabeza exploradora activa
+            if (currentHead) {
+                const hx = currentHead.c * cellSize;
+                const hy = currentHead.r * cellSize;
+
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(hx + cellSize / 2, hy + cellSize / 2, cellSize * 0.42, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(hx + cellSize / 2, hy + cellSize / 2, cellSize * 0.55, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        // ==================== ESTRATEGIAS Y HEURÍSTICAS DE PRIORIDAD ====================
+        function getOrderedDirections(r, c) {
+            const priority = selectPriority.value;
+
+            const baseDirs = [
+                { dr: 0, dc: 1, name: 'Derecha', symbol: '➔' },
+                { dr: 1, dc: 0, name: 'Abajo', symbol: '⬇' },
+                { dr: 0, dc: -1, name: 'Izquierda', symbol: '⬅' },
+                { dr: -1, dc: 0, name: 'Arriba', symbol: '⬆' }
+            ];
+
+            if (priority === 'clockwise') {
+                return [baseDirs[0], baseDirs[1], baseDirs[2], baseDirs[3]]; // Der, Abajo, Izq, Arr
+            } else if (priority === 'counter') {
+                return [baseDirs[1], baseDirs[0], baseDirs[3], baseDirs[2]]; // Abajo, Der, Arr, Izq
+            } else if (priority === 'vertical') {
+                return [baseDirs[1], baseDirs[3], baseDirs[0], baseDirs[2]]; // Abajo, Arr, Der, Izq
+            } else if (priority === 'horizontal') {
+                return [baseDirs[0], baseDirs[2], baseDirs[1], baseDirs[3]]; // Der, Izq, Abajo, Arr
+            } else if (priority === 'random') {
+                // Mezcla aleatoria en cada encrucijada
+                const shuffled = [...baseDirs];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            } else if (priority === 'greedy') {
+                // Heurística voraz: ordenar las direcciones según la menor distancia Manhattan a la meta
+                return [...baseDirs].sort((a, b) => {
+                    const distA = Math.abs((r + a.dr) - endPos.r) + Math.abs((c + a.dc) - endPos.c);
+                    const distB = Math.abs((r + b.dr) - endPos.r) + Math.abs((c + b.dc) - endPos.c);
+                    return distA - distB;
+                });
+            }
+
+            return baseDirs;
+        }
+
+        function updatePriorityBadges() {
+            const priority = selectPriority.value;
+            const displays = {
+                greedy: ['1° Hacia Meta', '2° Perpendicular', '3° Neutral', '4° Alejarse'],
+                clockwise: ['1° Derecha ➔', '2° Abajo ⬇', '3° Izquierda ⬅', '4° Arriba ⬆'],
+                counter: ['1° Abajo ⬇', '2° Derecha ➔', '3° Arriba ⬆', '4° Izquierda ⬅'],
+                vertical: ['1° Abajo ⬇', '2° Arriba ⬆', '3° Derecha ➔', '4° Izquierda ⬅'],
+                horizontal: ['1° Derecha ➔', '2° Izquierda ⬅', '3° Abajo ⬇', '4° Arriba ⬆'],
+                random: ['1° Azar 🎲', '2° Azar 🎲', '3° Azar 🎲', '4° Azar 🎲']
+            };
+
+            const badges = displays[priority] || displays.greedy;
+            priorityDisplay.innerHTML = badges.map(b => `<div class="priority-badge">${b}</div>`).join('');
+        }
+
+        selectPriority.addEventListener('change', updatePriorityBadges);
+
+        // ==================== ALGORITMO BACKTRACKING VISUAL ====================
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        async function solveMazeBacktracking() {
+            isSolving = true;
+            shouldStop = false;
+            stepsCount = 0;
+            backtracksCount = 0;
+            startTime = performance.now();
+
+            setControlsState(true);
+            updateStatus('Buscando ruta con Backtracking...', 'var(--accent-cyan)');
+            headerModeText.innerText = 'Resolviendo con Backtracking';
+
+            timerInterval = setInterval(() => {
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+                timerLabel.innerText = `${elapsed}s`;
+            }, 50);
+
+            const visited = Array(mazeSize).fill(null).map(() => Array(mazeSize).fill(false));
+            const pathStack = [];
+
+            async function backtrackDFS(r, c) {
+                if (shouldStop) return false;
+
+                // 1. Avanzar y apilar celda
+                visited[r][c] = true;
+                maze[r][c] = CELL_VISITED_PATH;
+                pathStack.push({ r, c });
+                stepsCount++;
+
+                metricSteps.innerText = stepsCount;
+                metricStack.innerText = pathStack.length;
+
+                renderMaze({ r, c });
+                playStepSound('step');
+
+                if (animationDelay > 0) await sleep(animationDelay);
+
+                // Condición de Victoria
+                if (r === endPos.r && c === endPos.c) {
+                    return true;
+                }
+
+                // 2. Obtener direcciones según la prioridad/heurística configurada
+                const directions = getOrderedDirections(r, c);
+
+                for (let dir of directions) {
+                    if (shouldStop) return false;
+
+                    const nr = r + dir.dr;
+                    const nc = c + dir.dc;
+
+                    if (nr >= 0 && nr < mazeSize && nc >= 0 && nc < mazeSize) {
+                        if (maze[nr][nc] !== CELL_WALL && !visited[nr][nc]) {
+                            const found = await backtrackDFS(nr, nc);
+                            if (found) return true;
+                        }
+                    }
+                }
+
+                if (shouldStop) return false;
+
+                // 3. RETROCESO (BACKTRACK): desapilar celda y marcarla como callejón sin salida
+                backtracksCount++;
+                metricBacktracks.innerText = backtracksCount;
+                maze[r][c] = CELL_BACKTRACKED;
+                pathStack.pop();
+                metricStack.innerText = pathStack.length;
+
+                updateStatus(`Callejón sin salida en (${r}, ${c}). Retrocediendo...`, 'var(--accent-rose)');
+                playStepSound('backtrack');
+                renderMaze({ r, c });
+
+                if (animationDelay > 0) await sleep(animationDelay);
+
+                return false;
+            }
+
+            const success = await backtrackDFS(startPos.r, startPos.c);
+            clearInterval(timerInterval);
+
+            if (shouldStop) {
+                updateStatus('Búsqueda detenida por el usuario.', 'var(--text-muted)');
+                setControlsState(false);
+                isSolving = false;
+                headerModeText.innerText = 'Modo Edición';
+                return;
+            }
+
+            if (success) {
+                for (let node of pathStack) {
+                    maze[node.r][node.c] = CELL_SOLUTION;
+                }
+                renderMaze();
+                metricSolution.innerText = `${pathStack.length} celdas`;
+                metricSolution.style.color = 'var(--accent-purple)';
+                updateStatus(`¡Meta alcanzada! Ruta óptima de ${pathStack.length} celdas.`, 'var(--accent-emerald)');
+                headerModeText.innerText = '¡Laberinto Resuelto!';
+                playStepSound('win');
+            } else {
+                updateStatus('No existe ruta entre Inicio y Meta (camino bloqueado).', 'var(--accent-rose)');
+                headerModeText.innerText = 'Sin Solución';
+            }
+
+            setControlsState(false);
+            isSolving = false;
+        }
+
+        // ==================== EDICIÓN MANUAL DE BLOQUES ====================
+        function getCellCoordsFromEvent(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const scaleX = canvas.width / rect.width / (window.devicePixelRatio || 1);
+            const scaleY = canvas.height / rect.height / (window.devicePixelRatio || 1);
+
+            const displaySize = parseFloat(canvas.style.width);
+            const cellSize = displaySize / mazeSize;
+
+            const x = (clientX - rect.left);
+            const y = (clientY - rect.top);
+
+            const c = Math.floor(x / cellSize);
+            const r = Math.floor(y / cellSize);
+
+            return { r, c };
+        }
+
+        function applyToolAt(r, c) {
+            if (isSolving) return;
+            if (r < 0 || r >= mazeSize || c < 0 || c >= mazeSize) return;
+
+            // No permitir bloquear los bordes exteriores principales si se desea mantener contenedor
+            if (r === 0 || r === mazeSize - 1 || c === 0 || c === mazeSize - 1) {
+                // Permitir si se está limpiando/abriendo pasaje
+                if (currentTool === 'passage') {
+                    maze[r][c] = CELL_PASSAGE;
+                    renderMaze();
+                }
+                return;
+            }
+
+            if (currentTool === 'wall') {
+                if ((r === startPos.r && c === startPos.c) || (r === endPos.r && c === endPos.c)) return;
+                maze[r][c] = CELL_WALL;
+            } else if (currentTool === 'passage') {
+                maze[r][c] = CELL_PASSAGE;
+            } else if (currentTool === 'start') {
+                if (r === endPos.r && c === endPos.c) return;
+                maze[startPos.r][startPos.c] = CELL_PASSAGE;
+                startPos = { r, c };
+                maze[r][c] = CELL_PASSAGE;
+            } else if (currentTool === 'end') {
+                if (r === startPos.r && c === startPos.c) return;
+                maze[endPos.r][endPos.c] = CELL_PASSAGE;
+                endPos = { r, c };
+                maze[r][c] = CELL_PASSAGE;
+            }
+
+            renderMaze();
+        }
+
+        // Eventos del Mouse y Pantalla Táctil en Canvas
+        canvas.addEventListener('mousedown', (e) => {
+            if (isSolving) return;
+            isDrawing = true;
+            const { r, c } = getCellCoordsFromEvent(e);
+            applyToolAt(r, c);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const coords = getCellCoordsFromEvent(e);
+            hoveredCell = coords;
+            if (isDrawing) {
+                applyToolAt(coords.r, coords.c);
+            } else {
+                renderMaze();
+            }
+        });
+
+        window.addEventListener('mouseup', () => { isDrawing = false; });
+        canvas.addEventListener('mouseleave', () => {
+            hoveredCell = null;
+            if (!isSolving) renderMaze();
+        });
+
+        // Eventos táctiles móviles
+        canvas.addEventListener('touchstart', (e) => {
+            if (isSolving) return;
+            isDrawing = true;
+            const coords = getCellCoordsFromEvent(e);
+            applyToolAt(coords.r, coords.c);
+            e.preventDefault();
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (isSolving) return;
+            const coords = getCellCoordsFromEvent(e);
+            applyToolAt(coords.r, coords.c);
+            e.preventDefault();
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => { isDrawing = false; });
+
+        // Selector de herramientas (Muro, Pasaje, Inicio, Meta)
+        toolButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (isSolving) return;
+                toolButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentTool = btn.dataset.tool;
+                updateStatus(`Herramienta seleccionada: ${btn.innerText.trim()}`, 'var(--accent-purple)');
+            });
+        });
+
+        // ==================== LIMPIEZA Y REINICIO ====================
+        function clearPathOnly() {
+            if (isSolving) {
+                shouldStop = true;
+                return;
+            }
+            for (let r = 0; r < mazeSize; r++) {
+                for (let c = 0; c < mazeSize; c++) {
+                    if (maze[r][c] !== CELL_WALL) {
+                        maze[r][c] = CELL_PASSAGE;
+                    }
+                }
+            }
+            resetMetrics();
+            updateStatus('Ruta limpiada. Paredes intactas para reintentar.', 'var(--accent-cyan)');
+            renderMaze();
+        }
+
+        function reloadMaze() {
+            if (isSolving) shouldStop = true;
+            clearInterval(timerInterval);
+            resetMetrics();
+            createMazeByType();
+            updateStatus(`Laberinto generado con estilo: ${selectMazeType.options[selectMazeType.selectedIndex].text}`, 'var(--accent-cyan)');
+            renderMaze();
+            setControlsState(false);
+            isSolving = false;
+        }
+
+        function resetMetrics() {
+            stepsCount = 0;
+            backtracksCount = 0;
+            metricSteps.innerText = '0';
+            metricBacktracks.innerText = '0';
+            metricStack.innerText = '0';
+            metricSolution.innerText = '-';
+            metricSolution.style.color = '#f8fafc';
+            timerLabel.innerText = '0.00s';
+        }
+
+        function updateStatus(msg, color) {
+            statusMessage.innerText = msg;
+            statusMessage.style.color = color;
+            statusIndicator.style.background = color;
+            statusIndicator.style.boxShadow = `0 0 8px ${color}`;
+        }
+
+        function setControlsState(running) {
+            btnStart.disabled = running;
+            btnGenerate.disabled = running;
+            sizeButtons.forEach(btn => btn.disabled = running);
+            toolButtons.forEach(btn => btn.disabled = running);
+            selectMazeType.disabled = running;
+            selectPriority.disabled = running;
+            btnClear.innerText = running ? 'Detener' : 'Limpiar Ruta';
+        }
+
+        // ==================== EVENT LISTENERS CONTROLES ====================
+        btnStart.addEventListener('click', () => {
+            if (!isSolving) {
+                clearPathOnly();
+                solveMazeBacktracking();
+            }
+        });
+
+        btnGenerate.addEventListener('click', reloadMaze);
+        selectMazeType.addEventListener('change', reloadMaze);
+
+        btnClear.addEventListener('click', () => {
+            if (isSolving) {
+                shouldStop = true;
+                isSolving = false;
+                setControlsState(false);
+                updateStatus('Ejecución detenida por el usuario.', 'var(--accent-amber)');
+            } else {
+                clearPathOnly();
+            }
+        });
+
+        // Selector de tamaños
+        sizeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (isSolving) return;
+                sizeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                mazeSize = parseInt(btn.dataset.size, 10);
+                labelSize.innerText = `${mazeSize} × ${mazeSize}`;
+                reloadMaze();
+            });
+        });
+
+        // Slider de velocidad
+        sliderSpeed.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            animationDelay = val;
+
+            if (val <= 3) labelSpeed.innerText = `Ultra Rápido (${val}ms)`;
+            else if (val <= 15) labelSpeed.innerText = `Rápido (${val}ms)`;
+            else if (val <= 45) labelSpeed.innerText = `Media (${val}ms)`;
+            else labelSpeed.innerText = `Lento (${val}ms)`;
+        });
+
+        window.addEventListener('resize', () => renderMaze());
+
+        // Inicialización
+        window.addEventListener('DOMContentLoaded', () => {
+            updatePriorityBadges();
+            reloadMaze();
+        });
+    </script>
+</body>
+</html>
