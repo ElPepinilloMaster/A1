@@ -1,0 +1,2349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diseño del Cableado para Sensores de Calidad del Aire | Prim vs. Kruskal — UTP Grupo 3</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-base: #ffffff;
+            --bg-subtle: #f8fafc;
+            --bg-card: #ffffff;
+            --border-light: #e2e8f0;
+            --border-hover: #2563eb;
+            --text-heading: #0f172a;
+            --text-body: #334155;
+            --text-muted: #64748b;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-soft: #eff6ff;
+            --accent-green: #059669;
+            --accent-green-soft: #ecfdf5;
+            --accent-red: #dc2626;
+            --accent-red-soft: #fef2f2;
+            --accent-amber: #d97706;
+            --accent-amber-soft: #fffbeb;
+            --accent-purple: #7c3aed;
+            --accent-purple-soft: #f5f3ff;
+            --accent-cyan: #0891b2;
+            --accent-cyan-soft: #ecfeff;
+            --shadow-subtle: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+            --shadow-hover: 0 18px 26px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-snap-type: y mandatory;
+            height: 100%;
+            overflow-y: scroll;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-body);
+            line-height: 1.5;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* ==================== BARRA SUPERIOR ==================== */
+        .top-navbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 62px;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            z-index: 1000;
+            box-shadow: var(--shadow-subtle);
+            gap: 12px;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 800;
+            font-size: 0.98rem;
+            color: var(--text-heading);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .brand-badge {
+            background: var(--primary-soft);
+            color: var(--primary);
+            border: 1px solid #bfdbfe;
+            font-size: 0.68rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 6px;
+            list-style: none;
+            align-items: center;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .nav-links::-webkit-scrollbar { display: none; }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.76rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            position: relative;
+            padding: 6px 10px;
+            border-radius: 7px;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+            background: var(--primary-soft);
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -14px;
+            left: 6px; right: 6px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        .nav-right-controls {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-shrink: 0;
+        }
+
+        .slide-counter {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: var(--text-heading);
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+            padding: 4px 10px;
+            border-radius: 7px;
+        }
+
+        .btn-icon-nav {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+            color: var(--text-heading);
+            width: 32px; height: 32px;
+            border-radius: 7px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon-nav:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-soft);
+        }
+
+        #reading-progress {
+            position: fixed;
+            top: 62px; left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #2563eb, #38bdf8, #059669);
+            width: 0%;
+            z-index: 1001;
+            transition: width 0.3s ease;
+        }
+
+        /* ==================== SECCIONES FULL-SCREEN ==================== */
+        .section {
+            width: 100vw;
+            height: 100vh;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 74px 36px 18px;
+            background-color: var(--bg-base);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section:nth-child(even) { background-color: var(--bg-subtle); }
+
+        .section-container {
+            width: 100%;
+            max-width: 1220px;
+            height: 100%;
+            max-height: 87vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-x: hidden;
+        }
+
+        /* ==================== CABECERAS + ETIQUETA INTEGRANTE ==================== */
+        .section-header-compact { margin-bottom: 10px; }
+
+        .badge-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 4px;
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+
+        .section-badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: var(--primary-soft);
+            color: var(--primary);
+            border: 1px solid #bfdbfe;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .speaker-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 4px 13px;
+            border-radius: 20px;
+            background: #ffffff;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-subtle);
+            font-size: 0.76rem;
+            font-weight: 800;
+            color: var(--text-heading);
+        }
+
+        .speaker-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--primary); }
+        .speaker-dot.s1 { background: #2563eb; }
+        .speaker-dot.s2 { background: #059669; }
+        .speaker-dot.s3 { background: #d97706; }
+        .speaker-dot.s4 { background: #7c3aed; }
+        .speaker-dot.s5 { background: #0891b2; }
+        .speaker-dot.s6 { background: #dc2626; }
+
+        .section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.82rem;
+            font-weight: 800;
+            color: var(--text-heading);
+            letter-spacing: -0.025em;
+            line-height: 1.18;
+            min-height: 2.2rem;
+        }
+
+        .section-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .type-cursor {
+            display: inline-block;
+            width: 3px;
+            height: 1.02em;
+            background: var(--primary);
+            margin-left: 4px;
+            vertical-align: text-bottom;
+            animation: blinkCursor 0.7s infinite;
+        }
+
+        @keyframes blinkCursor {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        /* ==================== TARJETAS ANIMADAS (ESTILO 2.html) ==================== */
+        .anim-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            box-shadow: var(--shadow-subtle);
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(24px) scale(0.97);
+            filter: blur(4px);
+            transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.28s ease,
+                        border-color 0.25s ease;
+        }
+
+        .anim-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            height: 3.5px;
+            width: 0%;
+            background: linear-gradient(90deg, #2563eb, #38bdf8);
+            border-radius: 14px 14px 0 0;
+            z-index: 2;
+            transition: width 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .anim-card.accent-green::before { background: linear-gradient(90deg, #059669, #34d399); }
+        .anim-card.accent-amber::before { background: linear-gradient(90deg, #d97706, #fbbf24); }
+        .anim-card.accent-red::before { background: linear-gradient(90deg, #dc2626, #f87171); }
+        .anim-card.accent-purple::before { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+        .anim-card.accent-cyan::before { background: linear-gradient(90deg, #0891b2, #22d3ee); }
+
+        .anim-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -120%;
+            width: 60%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.07), transparent);
+            transform: skewX(-20deg);
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .anim-card.card-revealed {
+            opacity: 1 !important;
+            transform: translateY(0) scale(1) !important;
+            filter: blur(0px) !important;
+        }
+
+        .anim-card.card-revealed::before { width: 100%; }
+        .anim-card.card-revealed::after { animation: cardShimmer 0.72s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes cardShimmer {
+            0% { left: -120%; }
+            100% { left: 220%; }
+        }
+
+        .anim-card.card-revealed:hover {
+            transform: translateY(-4px) scale(1) !important;
+            box-shadow: var(--shadow-hover);
+            border-color: var(--border-hover);
+            z-index: 10;
+        }
+
+        /* ==================== COMPONENTES VISUALES PPT ==================== */
+        .slide-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 14px;
+            min-height: 0;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .grid-2-wide { display: grid; grid-template-columns: 1.28fr 0.72fr; gap: 16px; }
+        .grid-2-right { display: grid; grid-template-columns: 0.82fr 1.18fr; gap: 16px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+
+        .card-pad { padding: 18px 20px; }
+        .card-pad-sm { padding: 13px 16px; }
+
+        .card-kicker {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .card-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.06rem;
+            font-weight: 800;
+            color: var(--text-heading);
+            margin-bottom: 6px;
+            line-height: 1.22;
+        }
+
+        .card-text {
+            font-size: 0.85rem;
+            color: var(--text-body);
+            line-height: 1.48;
+        }
+
+        .big-stat {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.95rem;
+            font-weight: 800;
+            line-height: 1.05;
+            color: var(--primary);
+            letter-spacing: -0.03em;
+        }
+
+        .big-stat-sm {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.45rem;
+            font-weight: 800;
+            line-height: 1.1;
+            color: var(--text-heading);
+        }
+
+        .stat-sub {
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-top: 3px;
+        }
+
+        .icon-circle {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            margin-bottom: 8px;
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+        .icon-circle.green { background: var(--accent-green-soft); color: var(--accent-green); }
+        .icon-circle.red { background: var(--accent-red-soft); color: var(--accent-red); }
+        .icon-circle.amber { background: var(--accent-amber-soft); color: var(--accent-amber); }
+        .icon-circle.purple { background: var(--accent-purple-soft); color: var(--accent-purple); }
+        .icon-circle.cyan { background: var(--accent-cyan-soft); color: var(--accent-cyan); }
+
+        .clean-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.84rem;
+            color: var(--text-body);
+        }
+
+        .clean-list li {
+            padding-left: 16px;
+            position: relative;
+            line-height: 1.42;
+        }
+
+        .clean-list li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        .clean-list li strong { color: var(--text-heading); }
+
+        .tag-chip {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 14px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .chip-blue { background: var(--primary-soft); color: var(--primary); border: 1px solid #bfdbfe; }
+        .chip-green { background: var(--accent-green-soft); color: var(--accent-green); border: 1px solid #a7f3d0; }
+        .chip-red { background: var(--accent-red-soft); color: var(--accent-red); border: 1px solid #fecaca; }
+        .chip-amber { background: var(--accent-amber-soft); color: var(--accent-amber); border: 1px solid #fde68a; }
+        .chip-purple { background: var(--accent-purple-soft); color: var(--accent-purple); border: 1px solid #ddd6fe; }
+
+        .callout-banner {
+            background: var(--primary-soft);
+            border-left: 4px solid var(--primary);
+            padding: 11px 16px;
+            border-radius: 0 10px 10px 0;
+            font-size: 0.84rem;
+            color: #1e3a8a;
+            line-height: 1.45;
+        }
+        .callout-banner.green { background: var(--accent-green-soft); border-left-color: var(--accent-green); color: #065f46; }
+        .callout-banner.amber { background: var(--accent-amber-soft); border-left-color: var(--accent-amber); color: #92400e; }
+        .callout-banner.red { background: var(--accent-red-soft); border-left-color: var(--accent-red); color: #991b1b; }
+
+        /* ==================== PORTADA & EQUIPO ==================== */
+        .hero-layout {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .hero-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.3rem;
+            font-weight: 800;
+            line-height: 1.12;
+            color: var(--text-heading);
+            margin-bottom: 10px;
+            letter-spacing: -0.03em;
+            min-height: 5.3rem;
+        }
+
+        .hero-hook-desc {
+            font-size: 0.92rem;
+            color: var(--text-body);
+            line-height: 1.5;
+            margin-bottom: 14px;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .order-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 11px;
+            border-radius: 9px;
+            border: 1px solid var(--border-light);
+            margin-bottom: 7px;
+            background: var(--bg-subtle);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .order-item:last-child { margin-bottom: 0; }
+        .order-item:hover {
+            background: var(--primary-soft);
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .order-left { display: flex; align-items: center; gap: 10px; }
+
+        .order-num {
+            width: 26px; height: 26px;
+            border-radius: 7px;
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .order-title { font-size: 0.84rem; font-weight: 800; color: var(--text-heading); line-height: 1.15; }
+        .order-sub { font-size: 0.72rem; color: var(--text-muted); }
+
+        .team-names-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 6px;
+        }
+
+        .student-pill {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+            color: var(--text-heading);
+            font-size: 0.73rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+
+        /* ==================== TABLAS LIMPIAS PPT ==================== */
+        .table-wrap { width: 100%; overflow-x: auto; }
+
+        table.ppt-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        table.ppt-table th {
+            background: #f1f5f9;
+            color: var(--text-heading);
+            font-weight: 800;
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 2px solid #cbd5e1;
+        }
+
+        table.ppt-table td {
+            padding: 7.5px 10px;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-body);
+        }
+        table.ppt-table tr:last-child td { border-bottom: none; }
+
+        /* ==================== BLOQUES VISUALES DE FÓRMULA / PASOS ==================== */
+        .equation-blocks {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .eq-part {
+            flex: 1;
+            min-width: 120px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 10px 12px;
+            text-align: center;
+        }
+
+        .eq-plus {
+            display: flex;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .vs-box {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .vs-badge {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: var(--text-heading);
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 800;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ==================== CANVAS PLANO UTP (SLIDE 9) ==================== */
+        .campus-canvas-box {
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .canvas-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-map-mode {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+            color: var(--text-body);
+            padding: 5px 10px;
+            border-radius: 7px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .btn-map-mode:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-map-mode.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 3px 8px rgba(37, 99, 235, 0.28);
+        }
+        .btn-map-mode.btn-anim {
+            background: var(--accent-green-soft);
+            border-color: #a7f3d0;
+            color: var(--accent-green);
+        }
+        .btn-map-mode.btn-anim:hover { background: var(--accent-green); color: #fff; }
+
+        #utp-canvas {
+            width: 100%;
+            height: 310px;
+            display: block;
+            border-radius: 9px;
+            background: #f8fafc;
+            border: 1px solid var(--border-light);
+        }
+
+        .map-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.71rem;
+            color: var(--text-muted);
+            align-items: center;
+        }
+
+        .dot-swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 4px; }
+
+        /* ==================== BARRAS VISUALES ==================== */
+        .bar-row {
+            display: grid;
+            grid-template-columns: 95px 1fr 82px;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 9px;
+            font-size: 0.78rem;
+        }
+
+        .bar-track {
+            height: 18px;
+            background: #e2e8f0;
+            border-radius: 9px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 9px;
+        }
+        .bar-fill.prim { background: linear-gradient(90deg, #2563eb, #38bdf8); }
+        .bar-fill.kruskal { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+
+        /* ==================== VEREDICTO BANNER ==================== */
+        .verdict-banner-box {
+            background: linear-gradient(90deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%);
+            color: #ffffff;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+        .verdict-banner-box h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.05rem; margin-bottom: 3px; }
+        .verdict-banner-box p { font-size: 0.83rem; opacity: 0.93; }
+
+        /* ==================== PIE DE DIAPOSITIVA ==================== */
+        .section-footer-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            padding-top: 7px;
+            border-top: 1px dashed var(--border-light);
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .footer-meta { font-size: 0.74rem; color: var(--text-muted); font-weight: 600; }
+        .footer-btns { display: flex; gap: 8px; }
+
+        .btn-slide-nav {
+            background: #ffffff;
+            color: var(--text-heading);
+            border: 1px solid var(--border-light);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.77rem;
+            padding: 7px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-slide-nav:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+        .btn-slide-nav.primary { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25); }
+        .btn-slide-nav.primary:hover { background: var(--primary-dark); color: #fff; }
+
+        @media (max-width: 1024px) {
+            html { scroll-snap-type: none; }
+            .section { height: auto; min-height: 100vh; padding: 78px 18px 28px; overflow-y: visible; }
+            .section-container { max-height: none; height: auto; gap: 14px; }
+            .hero-layout, .grid-2, .grid-2-wide, .grid-2-right, .grid-3, .grid-4, .grid-5, .vs-box { grid-template-columns: 1fr; }
+            .vs-badge { margin: 0 auto; }
+            .top-navbar { padding: 0 14px; }
+            .nav-links { display: none; }
+            .hero-title { font-size: 1.75rem; min-height: auto; }
+            .section-title { font-size: 1.38rem; min-height: auto; }
+            .verdict-banner-box { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== BARRA SUPERIOR ==================== -->
+    <nav class="top-navbar">
+        <a href="#sec-0" class="nav-brand" onclick="event.preventDefault(); jumpTo(0);">
+            <span>UTP · Cableado MST</span>
+            <span class="brand-badge">Grupo 3 · PC3</span>
+        </a>
+
+        <ul class="nav-links">
+            <li><a href="#sec-0" class="nav-link active" data-group="0" onclick="event.preventDefault(); jumpTo(0);">Portada</a></li>
+            <li><a href="#sec-1" class="nav-link" data-group="1" onclick="event.preventDefault(); jumpTo(1);">Integrante 1</a></li>
+            <li><a href="#sec-3" class="nav-link" data-group="2" onclick="event.preventDefault(); jumpTo(3);">Integrante 2</a></li>
+            <li><a href="#sec-5" class="nav-link" data-group="3" onclick="event.preventDefault(); jumpTo(5);">Integrante 3</a></li>
+            <li><a href="#sec-7" class="nav-link" data-group="4" onclick="event.preventDefault(); jumpTo(7);">Integrante 4</a></li>
+            <li><a href="#sec-9" class="nav-link" data-group="5" onclick="event.preventDefault(); jumpTo(9);">Integrante 5</a></li>
+            <li><a href="#sec-11" class="nav-link" data-group="6" onclick="event.preventDefault(); jumpTo(11);">Integrante 6</a></li>
+            <li><a href="#sec-13" class="nav-link" data-group="7" onclick="event.preventDefault(); jumpTo(13);">Equipo</a></li>
+        </ul>
+
+        <div class="nav-right-controls">
+            <span class="slide-counter" id="slide-counter">01 / 14</span>
+            <button class="btn-icon-nav" onclick="jumpTo(currentIndex - 1)" title="Anterior (←)">←</button>
+            <button class="btn-icon-nav" onclick="jumpTo(currentIndex + 1)" title="Siguiente (→)">→</button>
+            <button class="btn-icon-nav" onclick="toggleFullscreen()" title="Pantalla completa (F)">⛶</button>
+        </div>
+    </nav>
+    <div id="reading-progress"></div>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 0: PORTADA                                                      -->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-0">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">UTP Lima · Análisis y Diseño de Algoritmos · Semana 15</span>
+                    <span class="speaker-pill"><span class="speaker-dot"></span> Referencia Q2: <em>Electronics</em> (MDPI)</span>
+                </div>
+            </div>
+
+            <div class="slide-body">
+                <div class="hero-layout">
+                    <div>
+                        <h1 class="hero-title">
+                            <span class="type-title" data-text="Diseño del cableado para sensores de calidad del aire: Prim vs. Kruskal"></span><span class="type-cursor"></span>
+                        </h1>
+                        <p class="hero-hook-desc">
+                            ¿Cómo conectar 16 sensores ambientales en un edificio real al <strong>menor costo posible</strong>, esquivando muros y ascensores? Comparamos <strong>Prim y Kruskal</strong> en nuestra aplicación Java <code>RedSensoresMST</code>.
+                        </p>
+
+                        <div class="grid-3" style="margin-bottom:14px;">
+                            <div class="anim-card card-pad-sm">
+                                <div class="big-stat" style="font-size:1.45rem;">S/ 15,093</div>
+                                <div class="stat-sub">Costo óptimo (Prim = Kruskal)</div>
+                            </div>
+                            <div class="anim-card card-pad-sm accent-amber">
+                                <div class="big-stat" style="font-size:1.45rem; color:var(--accent-amber);">+27.88%</div>
+                                <div class="stat-sub">Sobrecosto por obstáculos</div>
+                            </div>
+                            <div class="anim-card card-pad-sm accent-green">
+                                <div class="big-stat" style="font-size:1.45rem; color:var(--accent-green);">-33.4%</div>
+                                <div class="stat-sub">Más rápido Prim en redes densas</div>
+                            </div>
+                        </div>
+
+                        <div class="hero-action-row" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <button class="btn-slide-nav primary" onclick="jumpTo(1)" style="padding:10px 20px; font-size:0.88rem;">
+                                Empezar con Integrante 1 →
+                            </button>
+                            <button class="btn-slide-nav" onclick="jumpTo(13)" style="padding:10px 16px;">
+                                Ver Autores / Equipo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="anim-card card-pad">
+                        <div class="card-kicker">Ruta de Exposición (Máx. 15 min)</div>
+                        <div class="card-title" style="margin-bottom:10px;">6 Bloques de Presentación</div>
+
+                        <div class="order-item" onclick="jumpTo(1)">
+                            <div class="order-left">
+                                <span class="order-num" style="background:#2563eb;">1</span>
+                                <div>
+                                    <div class="order-title">Integrante 1</div>
+                                    <div class="order-sub">El problema, por qué cablear, objetivos y app Java</div>
+                                </div>
+                            </div>
+                            <span class="tag-chip chip-blue">Slides 2–3</span>
+                        </div>
+
+                        <div class="order-item" onclick="jumpTo(3)">
+                            <div class="order-left">
+                                <span class="order-num" style="background:#059669;">2</span>
+                                <div>
+                                    <div class="order-title">Integrante 2</div>
+                                    <div class="order-sub">Qué hicieron otros estudios y plano de obstáculos</div>
+                                </div>
+                            </div>
+                            <span class="tag-chip chip-green">Slides 4–5</span>
+                        </div>
+
+                        <div class="order-item" onclick="jumpTo(5)">
+                            <div class="order-left">
+                                <span class="order-num" style="background:#d97706;">3</span>
+                                <div>
+                                    <div class="order-title">Integrante 3</div>
+                                    <div class="order-sub">Cómo se calcula el precio real y regla de desempate</div>
+                                </div>
+                            </div>
+                            <span class="tag-chip chip-amber">Slides 6–7</span>
+                        </div>
+
+                        <div class="order-item" onclick="jumpTo(7)">
+                            <div class="order-left">
+                                <span class="order-num" style="background:#7c3aed;">4</span>
+                                <div>
+                                    <div class="order-title">Integrante 4</div>
+                                    <div class="order-sub">Cómo trabajan Prim vs. Kruskal y cómo los medimos</div>
+                                </div>
+                            </div>
+                            <span class="tag-chip chip-purple">Slides 8–9</span>
+                        </div>
+
+                        <div class="order-item" onclick="jumpTo(9)">
+                            <div class="order-left">
+                                <span class="order-num" style="background:#0891b2;">5</span>
+                                <div>
+                                    <div class="order-title">Integrante 5</div>
+                                    <div class="order-sub">Plano vivo UTP y quién gana en redes grandes</div>
+                                </div>
+                            </div>
+                            <span class="tag-chip chip-blue">Slides 10–11</span>
+                        </div>
+
+                        <div class="order-item" onclick="jumpTo(11)">
+                            <div class="order-left">
+                                <span class="order-num" style="background:#dc2626;">6</span>
+                                <div>
+                                    <div class="order-title">Integrante 6</div>
+                                    <div class="order-sub">Pruebas ante fallos (E1–E5), conclusiones y futuro</div>
+                                </div>
+                            </div>
+                            <span class="tag-chip chip-red">Slides 12–13</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Facultad de Ingeniería · UTP Lima · Teclas ← → para avanzar · Tecla F para pantalla completa</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav primary" onclick="jumpTo(1)">Integrante 1 →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 1: INTEGRANTE 1 — PARTE A                                       -->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-1">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">Bloque 1 · El Problema Real</span>
+                    <span class="speaker-pill"><span class="speaker-dot s1"></span> Integrante 1</span>
+                </div>
+                <h2 class="section-title">
+                    <span class="type-title" data-text="¿Por qué cablear sensores de aire en lugar de usar Wi-Fi?"></span><span class="type-cursor"></span>
+                </h2>
+                <p class="section-subtitle">Monitorear el aire dentro de un edificio universitario exige energía constante y señal sin cortes.</p>
+            </div>
+
+            <div class="slide-body">
+                <div class="grid-3">
+                    <div class="anim-card card-pad accent-red">
+                        <div class="icon-circle red">🌫️</div>
+                        <div class="card-kicker" style="color:var(--accent-red);">1. El Problema en Lima</div>
+                        <div class="card-title">El aire interior también enferma</div>
+                        <p class="card-text" style="margin-bottom:8px;">En Lima, el polvo fino (<strong>PM₂.₅</strong>) eleva riesgos cardiorrespiratorios (Tapia et al., 2020).</p>
+                        <div class="callout-banner red" style="font-size:0.78rem; padding:7px 10px;">
+                            Las estaciones de la calle <strong>no ven</strong> lo que pasa dentro de laboratorios, talleres o sótanos.
+                        </div>
+                    </div>
+
+                    <div class="anim-card card-pad accent-amber">
+                        <div class="icon-circle amber">📶</div>
+                        <div class="card-kicker" style="color:var(--accent-amber);">2. Por qué falla lo Inalámbrico</div>
+                        <div class="card-title">Baterías cortas y paredes gruesas</div>
+                        <ul class="clean-list">
+                            <li><strong>Consumo alto:</strong> Sensores láser/CO₂ usan <strong>80–180 mA</strong> continuos → agotan pilas en días.</li>
+                            <li><strong>Bloqueo de señal:</strong> Concreto y ascensores tumban Wi-Fi/LoRa en <strong>25–40 dB</strong>.</li>
+                        </ul>
+                    </div>
+
+                    <div class="anim-card card-pad accent-green">
+                        <div class="icon-circle green">🔌</div>
+                        <div class="card-kicker" style="color:var(--accent-green);">3. Nuestra Solución Física</div>
+                        <div class="card-title">Campus UTP (180 m × 120 m)</div>
+                        <ul class="clean-list">
+                            <li><strong>16 puntos reales:</strong> 1 central (<code>GW-00</code>) + 15 sensores de aire.</li>
+                            <li><strong>Cableado RS-485 / PoE:</strong> Energía 24/7 y datos sin interferencia.</li>
+                            <li><strong>Reto:</strong> Elegir los tramos más baratos.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="anim-card card-pad-sm">
+                    <div class="callout-banner">
+                        <strong>Dato clave para el presupuesto:</strong> El cable cuesta solo <strong>S/ 4.50/m</strong>, pero la tubería PVC, perforar muros y el técnico representan <strong>más del 70% del gasto total</strong>. Por eso un buen algoritmo ahorra miles de soles.
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Integrante 1 · Diapositiva 1 de 2</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav" onclick="jumpTo(0)">← Portada</button>
+                    <button class="btn-slide-nav primary" onclick="jumpTo(2)">Siguiente: Objetivos y App →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 2: INTEGRANTE 1 — PARTE B                                       -->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-2">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">Bloque 1 · Qué Buscamos y Qué Construimos</span>
+                    <span class="speaker-pill"><span class="speaker-dot s1"></span> Integrante 1</span>
+                </div>
+                <h2 class="section-title">
+                    <span class="type-title" data-text="Nuestros 4 Objetivos y la Aplicación Java RedSensoresMST"></span><span class="type-cursor"></span>
+                </h2>
+                <p class="section-subtitle">Comparamos Prim y Kruskal sobre el mismo problema real para saber cuál conviene y cuánto cuesta de verdad.</p>
+            </div>
+
+            <div class="slide-body">
+                <div class="grid-4">
+                    <div class="anim-card card-pad-sm">
+                        <span class="tag-chip chip-blue">Objetivo 1</span>
+                        <div class="card-title" style="margin-top:8px;">Modelar lo Real</div>
+                        <p class="card-text">Armar el mapa del campus con obstáculos y compararlo contra un plano ideal sin paredes.</p>
+                    </div>
+                    <div class="anim-card card-pad-sm accent-green">
+                        <span class="tag-chip chip-green">Objetivo 2</span>
+                        <div class="card-title" style="margin-top:8px;">Prim vs. Kruskal</div>
+                        <p class="card-text">Programar ambos algoritmos en Java con una regla fija para resolver empates de precio.</p>
+                    </div>
+                    <div class="anim-card card-pad-sm accent-amber">
+                        <span class="tag-chip chip-amber">Objetivo 3</span>
+                        <div class="card-title" style="margin-top:8px;">Medir Velocidad</div>
+                        <p class="card-text">Probar redes de 25 a 500 nodos y validar quién es más rápido usando prueba estadística <em>t</em>.</p>
+                    </div>
+                    <div class="anim-card card-pad-sm accent-red">
+                        <span class="tag-chip chip-red">Objetivo 4</span>
+                        <div class="card-title" style="margin-top:8px;">Probar Fallos</div>
+                        <p class="card-text">Simular cortes de cable y alzas de precio para ver si la red aguanta o se desconecta.</p>
+                    </div>
+                </div>
+
+                <div class="anim-card card-pad">
+                    <div class="card-kicker">Nuestro Software Propio en Java 17 (Apache NetBeans)</div>
+                    <div class="card-title"><code>Main.java</code> + <code>VentanaPrincipal.java</code> — 4 Pantallas Interactivas</div>
+                    <div class="grid-4" style="margin-top:10px;">
+                        <div style="background:var(--bg-subtle); border:1px solid var(--border-light); border-radius:10px; padding:10px 12px;">
+                            <strong style="color:var(--primary); font-size:0.78rem;">Pestaña 1</strong>
+                            <div style="font-weight:700; font-size:0.84rem; color:var(--text-heading);">Plano Campus UTP</div>
+                            <div style="font-size:0.74rem; color:var(--text-muted);">Dibuja los 16 nodos, 3 muros y el árbol óptimo.</div>
+                        </div>
+                        <div style="background:var(--bg-subtle); border:1px solid var(--border-light); border-radius:10px; padding:10px 12px;">
+                            <strong style="color:var(--accent-green); font-size:0.78rem;">Pestaña 2</strong>
+                            <div style="font-weight:700; font-size:0.84rem; color:var(--text-heading);">Detalle de Tramos</div>
+                            <div style="font-size:0.74rem; color:var(--text-muted);">Lista los 15 cables elegidos con metros y soles.</div>
+                        </div>
+                        <div style="background:var(--bg-subtle); border:1px solid var(--border-light); border-radius:10px; padding:10px 12px;">
+                            <strong style="color:var(--accent-amber); font-size:0.78rem;">Pestaña 3</strong>
+                            <div style="font-weight:700; font-size:0.84rem; color:var(--text-heading);">Benchmark Escala</div>
+                            <div style="font-size:0.74rem; color:var(--text-muted);">Mide tiempo (ms) y RAM (KB) en 12 escenarios.</div>
+                        </div>
+                        <div style="background:var(--bg-subtle); border:1px solid var(--border-light); border-radius:10px; padding:10px 12px;">
+                            <strong style="color:var(--accent-red); font-size:0.78rem;">Pestaña 4</strong>
+                            <div style="font-weight:700; font-size:0.84rem; color:var(--text-heading);">Pruebas de Fallos</div>
+                            <div style="font-size:0.74rem; color:var(--text-muted);">Simula cortes E1–E5 y alerta desconexiones.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Integrante 1 · Fin de Bloque 1</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav" onclick="jumpTo(1)">← Anterior</button>
+                    <button class="btn-slide-nav primary" onclick="jumpTo(3)">Pase a Integrante 2 →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 3: INTEGRANTE 2 — PARTE A                                       -->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-3">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">Bloque 2 · Qué Hicieron Otros Estudios</span>
+                    <span class="speaker-pill"><span class="speaker-dot s2"></span> Integrante 2</span>
+                </div>
+                <h2 class="section-title">
+                    <span class="type-title" data-text="27 Investigaciones Revisadas: Qué Nos Aportaron y Qué Faltaba"></span><span class="type-cursor"></span>
+                </h2>
+                <p class="section-subtitle">Agrupamos los trabajos previos (2020–2025) en 4 grandes temas para detectar el vacío que cubre nuestro proyecto.</p>
+            </div>
+
+            <div class="slide-body">
+                <div class="grid-4">
+                    <div class="anim-card card-pad-sm">
+                        <div class="icon-circle">📊</div>
+                        <div class="card-kicker">Tema 1 · Algoritmos</div>
+                        <div class="card-title">MST y Prueba <em>t</em></div>
+                        <ul class="clean-list" style="font-size:0.78rem;">
+                            <li><strong>Cuya-Cámara (2025):</strong> Nos dio el método estadístico con prueba <em>t</em> (él usó Dijkstra).</li>
+                            <li><strong>Triami / Billing:</strong> Cableado con Kruskal y barreras, pero sin comparar contra Prim.</li>
+                        </ul>
+                    </div>
+
+                    <div class="anim-card card-pad-sm accent-amber">
+                        <div class="icon-circle amber">💰</div>
+                        <div class="card-kicker" style="color:var(--accent-amber);">Tema 2 · Costos</div>
+                        <div class="card-title">El Peso Manda</div>
+                        <ul class="clean-list" style="font-size:0.78rem;">
+                            <li><strong>Łukaszewski / Cerulli:</strong> Prueban que el costo real cambia la forma del árbol.</li>
+                            <li><strong>Molnar:</strong> Advierte que un MST básico no limita puertos por nodo.</li>
+                        </ul>
+                    </div>
+
+                    <div class="anim-card card-pad-sm accent-red">
+                        <div class="icon-circle red">🛡️</div>
+                        <div class="card-kicker" style="color:var(--accent-red);">Tema 3 · Fallos</div>
+                        <div class="card-title">Riesgo de Corte</div>
+                        <ul class="clean-list" style="font-size:0.78rem;">
+                            <li><strong>Lata / Dagdeviren:</strong> Un árbol mínimo tiene <strong>cero respaldo</strong>: si cortas un puente, la red se parte.</li>
+                            <li>Justifica nuestra alerta automática de desconexión.</li>
+                        </ul>
+                    </div>
+
+                    <div class="anim-card card-pad-sm accent-green">
+                        <div class="icon-circle green">🌿</div>
+                        <div class="card-kicker" style="color:var(--accent-green);">Tema 4 · Sensores</div>
+                        <div class="card-title">Calidad del Aire</div>
+                        <ul class="clean-list" style="font-size:0.78rem;">
+                            <li><strong>Christakis (<em>Electronics</em>) y Tapia:</strong> Exigen energía estable para medir aire en interiores.</li>
+                            <li>Ninguno diseñó la topología física del cableado.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="anim-card card-pad-sm accent-green">
+                    <div class="callout-banner green">
+                        <strong>¿Cuál es el aporte único de nuestro estudio?</strong> Somos los primeros en juntar las <strong>4 piezas en un solo software</strong>: (1) obstáculos reales de un campus peruano, (2) precios civiles reales en soles, (3) desempate por menos metros y (4) comparación estadística Prim vs. Kruskal según densidad.
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Integrante 2 · Diapositiva 1 de 2</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav" onclick="jumpTo(2)">← Anterior</button>
+                    <button class="btn-slide-nav primary" onclick="jumpTo(4)">Siguiente: Mapa de Obstáculos →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 4: INTEGRANTE 2 — PARTE B                                       -->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-4">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">Bloque 2 · Del Edificio Real a Código Java</span>
+                    <span class="speaker-pill"><span class="speaker-dot s2"></span> Integrante 2</span>
+                </div>
+                <h2 class="section-title">
+                    <span class="type-title" data-text="Cómo Representamos los 16 Sensores y 3 Obstáculos del Campus"></span><span class="type-cursor"></span>
+                </h2>
+                <p class="section-subtitle">Convertimos la arquitectura real del Pabellón UTP Lima en objetos Java que prohíben cruzar zonas bloqueadas.</p>
+            </div>
+
+            <div class="slide-body">
+                <div class="grid-2-right">
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <div class="anim-card card-pad-sm accent-green">
+                            <div class="card-kicker" style="color:var(--accent-green);">Clase 1: NodoSensor.java</div>
+                            <div class="card-title">16 Ubicaciones Reales (X, Y)</div>
+                            <ul class="clean-list" style="font-size:0.8rem;">
+                                <li><strong>1 Central (<code>GW-00</code>):</strong> Cuarto de rack del Piso 1.</li>
+                                <li><strong>15 Sensores (<code>S-01..S-15</code>):</strong> Laboratorios (Química, Física, Cómputo, Electrónica, Ambiental), Cafetería, Biblioteca, Auditorio, Sótano y Azotea.</li>
+                            </ul>
+                        </div>
+
+                        <div class="anim-card card-pad-sm accent-red">
+                            <div class="card-kicker" style="color:var(--accent-red);">Clase 2: ObstaculoFisico.java</div>
+                            <div class="card-title">3 Zonas Donde NO Puede Pasar Cable</div>
+                            <ul class="clean-list" style="font-size:0.8rem;">
+                                <li><strong>Bloqueo 1:</strong> Núcleo de ascensores y placa estructural A.</li>
+                                <li><strong>Bloqueo 2:</strong> Ducto de media tensión y junta sísmica.</li>
+                                <li><strong>Bloqueo 3:</strong> Patio abierto sin bandeja portacables.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Esquema SVG claro y didáctico del edificio -->
+                    <div class="anim-card card-pad" style="display:flex; flex-direction:column; justify-content:center;">
+                        <div class="card-kicker">Esquema Visual del Plano UTP (180 m × 120 m)</div>
+                        <svg viewBox="0 0 540 270" style="width:100%; height:auto; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; margin:6px 0;">
+                            <!-- Reglas de fondo -->
+                            <rect x="18" y="16" width="504" height="236" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+                            <!-- Obstáculos -->
+                            <rect x="185" y="70" width="52" height="115" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="4 3"/>
+                            <text x="211" y="124" text-anchor="middle" font-size="9.5" font-weight="800" fill="#991b1b">OBS 1</text>
+                            <text x="211" y="138" text-anchor="middle" font-size="8.5" font-weight="600" fill="#b91c1c">Ascensores</text>
+
+                            <rect x="295" y="75" width="38" height="118" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="4 3"/>
+                            <text x="314" y="128" text-anchor="middle" font-size="9.5" font-weight="800" fill="#991b1b">OBS 2</text>
+                            <text x="314" y="142" text-anchor="middle" font-size="8.5" font-weight="600" fill="#b91c1c">Ducto MT</text>
+
+                            <rect x="385" y="80" width="38" height="98" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="4 3"/>
+                            <text x="404" y="125" text-anchor="middle" font-size="9.5" font-weight="800" fill="#991b1b">OBS 3</text>
+                            <text x="404" y="139" text-anchor="middle" font-size="8.5" font-weight="600" fill="#b91c1c">Patio</text>
+
+                            <!-- Ejemplo de ruta prohibida vs rodeo -->
+                            <line x1="160" y1="110" x2="268" y2="128" stroke="#dc2626" stroke-width="2.2" stroke-dasharray="5 4"/>
+                            <text x="214" y="102" text-anchor="middle" font-size="9" font-weight="800" fill="#dc2626">✕ 9 rutas bloqueadas</text>
+
+                            <path d="M 160 110 Q 214 38 268 45 L 268 128" fill="none" stroke="#059669" stroke-width="2.5"/>
+                            <text x="216" y="34" text-anchor="middle" font-size="9" font-weight="800" fill="#059669">✓ 38 rutas válidas (rodeando)</text>
+
+                            <!-- Nodos representativos -->
+                            <circle cx="62" cy="135" r="9" fill="#dc2626" stroke="#fff" stroke-width="2"/>
+                            <text x="62" y="157" text-anchor="middle" font-size="9.5" font-weight="800" fill="#0f172a">GW-00 (Rack)</text>
+
+                            <circle cx="160" cy="110" r="6.5" fill="#059669" stroke="#fff" stroke-width="2"/>
+                            <circle cx="115" cy="52" r="6.5" fill="#059669" stroke="#fff" stroke-width="2"/>
+                            <circle cx="120" cy="208" r="6.5" fill="#059669" stroke="#fff" stroke-width="2"/>
+                            <circle cx="268" cy="45" r="6.5" fill="#059669" stroke="#fff" stroke-width="2"/>
+                            <circle cx="268" cy="128" r="6.5" fill="#059669" stroke="#fff" stroke-width="2"/>
+                            <circle cx="355" cy="52" r="6.5" fill="#059669" stroke="#fff" stroke-width="2"/>
+                            <circle cx="350" cy="212" r="6.5" fill="#059669" stroke="#fff" stroke-width="2"/>
+                            <circle cx="468" cy="60" r="6.5" fill="#059669" stroke="#fff" stroke-width="2"/>
+                            <circle cx="496" cy="95" r="7" fill="#2563eb" stroke="#fff" stroke-width="2"/>
+                            <text x="492" y="116" text-anchor="middle" font-size="9" font-weight="800" fill="#1d4ed8">S-15 Azotea</text>
+                        </svg>
+                        <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:var(--text-muted); margin-top:4px;">
+                            <span><strong>47</strong> rutas en línea recta</span>
+                            <span style="color:var(--accent-red); font-weight:700;">− 9 bloqueadas por muros</span>
+                            <span style="color:var(--accent-green); font-weight:800;">= 38 rutas factibles reales</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Integrante 2 · Fin de Bloque 2</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav" onclick="jumpTo(3)">← Anterior</button>
+                    <button class="btn-slide-nav primary" onclick="jumpTo(5)">Pase a Integrante 3 →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 5: INTEGRANTE 3 — PARTE A (BASADO EN INTEGRANTE 3 PARTE C.DOCX) -->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-5">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">Bloque 3 · Cómo Armamos el Mapa y el Precio</span>
+                    <span class="speaker-pill"><span class="speaker-dot s3"></span> Integrante 3</span>
+                </div>
+                <h2 class="section-title">
+                    <span class="type-title" data-text="Dos Medidas por Ruta: Metros Reales y Costo en Soles"></span><span class="type-cursor"></span>
+                </h2>
+                <p class="section-subtitle">El precio real no es solo el cable: sumamos tubos PVC, trabajo del técnico, conectores y dificultad de obra.</p>
+            </div>
+
+            <div class="slide-body">
+                <!-- Fórmula explicada visualmente como bloques -->
+                <div class="anim-card card-pad-sm accent-amber">
+                    <div class="card-kicker" style="color:var(--accent-amber);">¿Qué suma el costo de cada tramo?</div>
+                    <div class="equation-blocks">
+                        <div class="eq-part">
+                            <div style="font-size:1.1rem;">🔌</div>
+                            <div style="font-weight:800; color:var(--text-heading); font-size:0.84rem;">Cable F/UTP</div>
+                            <div class="mono" style="color:var(--primary); font-weight:700; font-size:0.8rem;">S/ 4.50 / m</div>
+                        </div>
+                        <div class="eq-plus">+</div>
+                        <div class="eq-part">
+                            <div style="font-size:1.1rem;">🛠️</div>
+                            <div style="font-weight:800; color:var(--text-heading); font-size:0.84rem;">Mano de Obra</div>
+                            <div class="mono" style="color:var(--primary); font-weight:700; font-size:0.8rem;">S/ 8.50 / m</div>
+                        </div>
+                        <div class="eq-plus">+</div>
+                        <div class="eq-part">
+                            <div style="font-size:1.1rem;">🔗</div>
+                            <div style="font-weight:800; color:var(--text-heading); font-size:0.84rem;">Conectores</div>
+                            <div class="mono" style="color:var(--primary); font-weight:700; font-size:0.8rem;">S/ 35 / tramo</div>
+                        </div>
+                        <div class="eq-plus">+</div>
+                        <div class="eq-part" style="background:var(--accent-amber-soft); border-color:#fde68a;">
+                            <div style="font-size:1.1rem;">🧱</div>
+                            <div style="font-weight:800; color:#92400e; font-size:0.84rem;">Tubo PVC × Dificultad (α)</div>
+                            <div class="mono" style="color:#b45309; font-weight:700; font-size:0.8rem;">S/ 12/m × (1.0 / 1.35 / 1.75)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-2-right">
+                    <div class="anim-card card-pad-sm">
+                        <div class="card-kicker">1. Longitud Real con Vueltas</div>
+                        <div class="card-title">Distancia + Desvío (δ)</div>
+                        <p class="card-text" style="margin-bottom:8px;">Un cable no cruza en diagonal por el aire: sigue pasillos y esquinas. Por eso multiplicamos la línea recta por un desvío <strong>δ entre 1.10 y 1.35</strong>.</p>
+                        <div class="callout-banner amber" style="font-size:0.78rem;">
+                            <strong>Factor de dificultad α:</strong><br>
+                            • <code>1.00</code> pasillo simple<br>
+                            • <code>1.35</code> romper pared o losa<br>
+                            • <code>1.75</code> tubería exterior en azotea
+                        </div>
+                    </div>
+
+                    <div class="anim-card card-pad-sm">
+                        <div class="card-kicker">2. Transparencia de Precios (Tabla 2)</div>
+                        <div class="table-wrap">
+                            <table class="ppt-table">
+                                <thead>
+                                    <tr>
+                                        <th>Qué se paga</th>
+                                        <th>Precio</th>
+                                        <th>Origen del dato</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Cable de red LSZH</strong></td>
+                                        <td class="mono">S/ 4.50 / m</td>
+                                        <td><span class="tag-chip chip-green">Tienda Lima</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Tubo PVC pesado</strong></td>
+                                        <td class="mono">S/ 12.00 / m</td>
+                                        <td><span class="tag-chip chip-green">Tienda Lima</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Técnico (instalación)</strong></td>
+                                        <td class="mono">S/ 8.50 / m</td>
+                                        <td><span class="tag-chip chip-amber">Estimado</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Conectores por punta</strong></td>
+                                        <td class="mono">S/ 35.00 / tramo</td>
+                                        <td><span class="tag-chip chip-amber">Estimado</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Integrante 3 · Diapositiva 1 de 2</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav" onclick="jumpTo(4)">← Anterior</button>
+                    <button class="btn-slide-nav primary" onclick="jumpTo(6)">Siguiente: Regla de Desempate →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 6: INTEGRANTE 3 — PARTE B (DESEMPATE EXPLICADO VISUALMENTE)     -->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-6">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">Bloque 3 · Regla de Desempate en AristaCableado.java</span>
+                    <span class="speaker-pill"><span class="speaker-dot s3"></span> Integrante 3</span>
+                </div>
+                <h2 class="section-title">
+                    <span class="type-title" data-text="¿Qué pasa si dos caminos cuestan exactamente lo mismo?"></span><span class="type-cursor"></span>
+                </h2>
+                <p class="section-subtitle">Si empatan en soles, obligamos a Prim y Kruskal a elegir siempre el camino más corto en metros.</p>
+            </div>
+
+            <div class="slide-body">
+                <!-- Comparación visual de ejemplo real en la azotea -->
+                <div class="anim-card card-pad">
+                    <div class="card-kicker">Ejemplo Real Ocurrido en el Campus UTP (Conexión a la Azotea S-15)</div>
+                    <div class="vs-box" style="margin-top:8px;">
+                        <div style="background:var(--accent-green-soft); border:2px solid #10b981; border-radius:12px; padding:14px 16px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                <strong style="color:#065f46; font-size:0.95rem;">Opción A: S-14 → S-15</strong>
+                                <span class="tag-chip chip-green">✓ ELEGIDA</span>
+                            </div>
+                            <div class="big-stat-sm" style="color:#059669;">S/ 1,125.00 · 32.06 m</div>
+                            <div style="font-size:0.78rem; color:#047857; margin-top:4px;">Cuesta lo mismo, pero usa menos cable físico.</div>
+                        </div>
+
+                        <div class="vs-badge">VS</div>
+
+                        <div style="background:var(--accent-red-soft); border:2px dashed #f87171; border-radius:12px; padding:14px 16px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                <strong style="color:#991b1b; font-size:0.95rem;">Opción B: S-13 → S-15</strong>
+                                <span class="tag-chip chip-red">✕ DESCARTADA</span>
+                            </div>
+                            <div class="big-stat-sm" style="color:#dc2626;">S/ 1,125.00 · 37.33 m</div>
+                            <div style="font-size:0.78rem; color:#b91c1c; margin-top:4px;">Mismo precio, pero gasta <strong>5.27 m extra</strong> de cable.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Los 4 pasos de decisión -->
+                <div class="grid-2">
+                    <div class="anim-card card-pad-sm accent-amber">
+                        <div class="card-kicker" style="color:var(--accent-amber);">Orden de Decisión en <code>AristaCableado.java</code></div>
+                        <div style="display:flex; gap:6px; align-items:center; margin-top:8px; flex-wrap:wrap;">
+                            <span class="tag-chip chip-blue" style="padding:6px 10px;">1° Menor Precio (S/)</span>
+                            <span style="font-weight:800; color:var(--text-muted);">→</span>
+                            <span class="tag-chip chip-green" style="padding:6px 10px;">2° Menos Metros (m)</span>
+                            <span style="font-weight:800; color:var(--text-muted);">→</span>
+                            <span class="tag-chip chip-amber" style="padding:6px 10px;">3° y 4° ID (u, v)</span>
+                        </div>
+                    </div>
+
+                    <div class="anim-card card-pad-sm accent-green">
+                        <div class="card-kicker" style="color:var(--accent-green);">Dos Beneficios Directos</div>
+                        <ul class="clean-list" style="font-size:0.81rem;">
+                            <li><strong>Ahorro gratis:</strong> <strong>5.27 m menos de cable</strong> (menor pérdida eléctrica).</li>
+                            <li><strong>Mismo resultado:</strong> Prim y Kruskal siempre eligen exactamente los mismos 15 cables.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Integrante 3 · Fin de Bloque 3</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav" onclick="jumpTo(5)">← Anterior</button>
+                    <button class="btn-slide-nav primary" onclick="jumpTo(7)">Pase a Integrante 4 →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 7: INTEGRANTE 4 — PARTE A (PRIM VS KRUSKAL EXPLICADO FÁCIL)     -->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-7">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">Bloque 4 · Cómo Trabajan los Algoritmos</span>
+                    <span class="speaker-pill"><span class="speaker-dot s4"></span> Integrante 4</span>
+                </div>
+                <h2 class="section-title">
+                    <span class="type-title" data-text="Prim vs. Kruskal: Dos Caminos Distintos al Mismo Óptimo"></span><span class="type-cursor"></span>
+                </h2>
+                <p class="section-subtitle">Ambos encuentran el cableado más barato, pero su estrategia interna explica por qué uno es más veloz en redes densas.</p>
+            </div>
+
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="anim-card card-pad">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span class="tag-chip chip-blue">AlgoritmoPrim.java</span>
+                            <span class="mono" style="font-size:0.78rem; font-weight:800; color:var(--primary);">O(E log V)</span>
+                        </div>
+                        <div class="card-title">Prim: "Crece como mancha desde un nodo"</div>
+                        <svg viewBox="0 0 360 92" style="width:100%; height:84px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0; margin:6px 0;">
+                            <circle cx="55" cy="46" r="14" fill="#2563eb"/><text x="55" y="50" text-anchor="middle" fill="#fff" font-size="10" font-weight="800">1</text>
+                            <line x1="69" y1="46" x2="132" y2="30" stroke="#2563eb" stroke-width="3"/>
+                            <circle cx="146" cy="28" r="12" fill="#3b82f6"/><text x="146" y="32" text-anchor="middle" fill="#fff" font-size="10" font-weight="800">2</text>
+                            <line x1="158" y1="30" x2="225" y2="54" stroke="#2563eb" stroke-width="3"/>
+                            <circle cx="238" cy="58" r="12" fill="#60a5fa"/><text x="238" y="62" text-anchor="middle" fill="#fff" font-size="10" font-weight="800">3</text>
+                            <line x1="250" y1="56" x2="305" y2="34" stroke="#93c5fd" stroke-width="2" stroke-dasharray="4 3"/>
+                            <circle cx="316" cy="30" r="11" fill="#e2e8f0" stroke="#64748b" stroke-width="1.5"/><text x="316" y="34" text-anchor="middle" fill="#334155" font-size="10" font-weight="800">?</text>
+                        </svg>
+                        <ul class="clean-list" style="font-size:0.81rem;">
+                            <li><strong>Cómo piensa:</strong> Empieza en <code>GW-00</code> y siempre añade el cable más barato conectado a su frontera.</li>
+                            <li><strong>Su gran truco (Poda):</strong> Con <code>mejorArista[v]</code> descarta al instante cables más caros sin llenar la memoria.</li>
+                            <li><strong>Si falta conectar algo:</strong> Usa un recorrido BFS para contar grupos aislados.</li>
+                        </ul>
+                    </div>
+
+                    <div class="anim-card card-pad accent-purple">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span class="tag-chip chip-purple">AlgoritmoKruskal.java</span>
+                            <span class="mono" style="font-size:0.78rem; font-weight:800; color:var(--accent-purple);">O(E log E)</span>
+                        </div>
+                        <div class="card-title">Kruskal: "Ordena todo y une sin cerrar bucles"</div>
+                        <svg viewBox="0 0 360 92" style="width:100%; height:84px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0; margin:6px 0;">
+                            <circle cx="48" cy="30" r="11" fill="#7c3aed"/><circle cx="115" cy="64" r="11" fill="#7c3aed"/>
+                            <line x1="57" y1="35" x2="106" y2="59" stroke="#7c3aed" stroke-width="3"/>
+                            <text x="82" y="34" font-size="9" font-weight="800" fill="#7c3aed">1° barato</text>
+                            <circle cx="220" cy="30" r="11" fill="#8b5cf6"/><circle cx="295" cy="60" r="11" fill="#8b5cf6"/>
+                            <line x1="230" y1="34" x2="285" y2="56" stroke="#8b5cf6" stroke-width="3"/>
+                            <text x="260" y="30" font-size="9" font-weight="800" fill="#7c3aed">2° barato</text>
+                            <line x1="126" y1="62" x2="210" y2="34" stroke="#a78bfa" stroke-width="2" stroke-dasharray="4 3"/>
+                            <text x="170" y="72" text-anchor="middle" font-size="8.5" font-weight="700" fill="#64748b">Union-Find une islas</text>
+                        </svg>
+                        <ul class="clean-list" style="font-size:0.81rem;">
+                            <li><strong>Cómo piensa:</strong> Primero ordena <strong>todos</strong> los cables del mapa de menor a mayor precio.</li>
+                            <li><strong>Su gran truco (Union-Find):</strong> Con compresión de caminos y rango verifica en tiempo casi instantáneo si un cable forma ciclo.</li>
+                            <li><strong>Límite en redes densas:</strong> Si hay miles de cables, ordenarlos todos cuesta tiempo y RAM.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="anim-card card-pad-sm">
+                    <div class="callout-banner">
+                        <strong>Experimento 100% repetible:</strong> Nuestra app usa una semilla fija (<code>20261115</code> con generador LCG propio) para que cualquier docente que ejecute el programa en NetBeans obtenga <strong>exactamente los mismos grafos y resultados</strong>.
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Integrante 4 · Diapositiva 1 de 2</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav" onclick="jumpTo(6)">← Anterior</button>
+                    <button class="btn-slide-nav primary" onclick="jumpTo(8)">Siguiente: Cómo Medimos →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 8: INTEGRANTE 4 — PARTE B (LÍNEA BASE + MÉTRICAS CLARAS)        -->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-8">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">Bloque 4 · Cómo Evaluamos los Resultados</span>
+                    <span class="speaker-pill"><span class="speaker-dot s4"></span> Integrante 4</span>
+                </div>
+                <h2 class="section-title">
+                    <span class="type-title" data-text="Línea Base Teórica vs. Realidad y Nuestras 4 Métricas Clave"></span><span class="type-cursor"></span>
+                </h2>
+                <p class="section-subtitle">Para saber cuánto cuestan los obstáculos y qué algoritmo es mejor, medimos bajo reglas estrictas.</p>
+            </div>
+
+            <div class="slide-body">
+                <!-- Comparación visual G_base vs G_fact -->
+                <div class="anim-card card-pad-sm accent-purple">
+                    <div class="card-kicker" style="color:var(--accent-purple);">¿Cómo sabemos cuánto encarecen los obstáculos?</div>
+                    <div class="vs-box" style="margin-top:6px;">
+                        <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:11px 14px;">
+                            <div style="font-weight:800; color:var(--text-heading); font-size:0.9rem;">Línea Base Teórica (<code>G_base</code>)</div>
+                            <div style="font-size:0.79rem; color:var(--text-muted); margin-top:3px;"><strong>47 rutas en línea recta</strong> atravesando muros y sin obra compleja (δ=1, α=1). Sirve solo como referencia ideal.</div>
+                        </div>
+                        <div class="vs-badge" style="background:var(--accent-purple);">VS</div>
+                        <div style="background:var(--primary-soft); border:1px solid #93c5fd; border-radius:10px; padding:11px 14px;">
+                            <div style="font-weight:800; color:var(--primary-dark); font-size:0.9rem;">Grafo Real Construible (<code>G_fact</code>)</div>
+                            <div style="font-size:0.79rem; color:#1e40af; margin-top:3px;"><strong>38 rutas reales</strong> esquivando los 3 obstáculos y pagando pasillos, losas y azotea. La diferencia es el <strong>sobrecosto real</strong>.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 Métricas fáciles de entender -->
+                <div class="grid-4">
+                    <div class="anim-card card-pad-sm">
+                        <div class="icon-circle">💵</div>
+                        <div class="card-title" style="font-size:0.94rem;">Costo y Metros</div>
+                        <p class="card-text" style="font-size:0.79rem;">Soles totales (<strong>PEN</strong>), longitud de cable (<strong>m</strong>) y % de sobrecosto por rodear obstáculos.</p>
+                    </div>
+                    <div class="anim-card card-pad-sm accent-green">
+                        <div class="icon-circle green">⏱️</div>
+                        <div class="card-title" style="font-size:0.94rem;">Velocidad Real</div>
+                        <p class="card-text" style="font-size:0.79rem;">Medida en milisegundos (<code>nanoTime</code>) tras <strong>15 repeticiones</strong> y validada con <strong>prueba <em>t</em> (95%)</strong>.</p>
+                    </div>
+                    <div class="anim-card card-pad-sm accent-amber">
+                        <div class="icon-circle amber">🧠</div>
+                        <div class="card-title" style="font-size:0.94rem;">Memoria RAM</div>
+                        <p class="card-text" style="font-size:0.79rem;">Kilobytes (<strong>KB</strong>) usados por el montículo de Prim frente a la lista ordenada de Kruskal.</p>
+                    </div>
+                    <div class="anim-card card-pad-sm accent-red">
+                        <div class="icon-circle red">🔗</div>
+                        <div class="card-title" style="font-size:0.94rem;">Conectividad</div>
+                        <p class="card-text" style="font-size:0.79rem;">Cuenta los bloques conexos: <strong>1</strong> = red sana; <strong>&gt; 1</strong> = alerta de sensores aislados.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Integrante 4 · Fin de Bloque 4</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav" onclick="jumpTo(7)">← Anterior</button>
+                    <button class="btn-slide-nav primary" onclick="jumpTo(9)">Pase a Integrante 5 →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 9: INTEGRANTE 5 — PARTE A (PLANO INTERACTIVO CAMPUS UTP)        -->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-9">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">Bloque 5 · Resultados Reales en el Campus UTP</span>
+                    <span class="speaker-pill"><span class="speaker-dot s5"></span> Integrante 5</span>
+                </div>
+                <h2 class="section-title">
+                    <span class="type-title" data-text="Plano Interactivo del Campus: Costo Óptimo y Sobrecosto"></span><span class="type-cursor"></span>
+                </h2>
+                <p class="section-subtitle">Prim y Kruskal llegan exactamente al mismo presupuesto: S/ 15,093.42 y 542.96 m de cable.</p>
+            </div>
+
+            <div class="slide-body">
+                <div class="grid-2-wide">
+                    <div class="anim-card campus-canvas-box">
+                        <div class="canvas-toolbar">
+                            <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                                <button class="btn-map-mode active" id="map-btn-mst" onclick="setMapMode('mst')">MST Óptimo</button>
+                                <button class="btn-map-mode" id="map-btn-base" onclick="setMapMode('base')">Sin Obstáculos</button>
+                                <button class="btn-map-mode" id="map-btn-tie" onclick="setMapMode('tie')">Desempate (-5.27m)</button>
+                                <button class="btn-map-mode" id="map-btn-e5" onclick="setMapMode('e5')">Corte E5</button>
+                            </div>
+                            <button class="btn-map-mode btn-anim" onclick="animateUTPMst()">▶ Animar 15 Tramos</button>
+                        </div>
+
+                        <canvas id="utp-canvas"></canvas>
+
+                        <div class="map-legend">
+                            <span><span class="dot-swatch" style="background:#dc2626; border-radius:50%;"></span>GW-00</span>
+                            <span><span class="dot-swatch" style="background:#059669; border-radius:50%;"></span>15 Sensores</span>
+                            <span><span class="dot-swatch" style="background:#cbd5e1; border:1px solid #64748b;"></span>3 Obstáculos</span>
+                            <span><span class="dot-swatch" style="background:#1d4ed8;"></span>15 Tramos MST</span>
+                            <span id="map-caption" style="margin-left:auto; font-weight:800; color:var(--primary);">Prim = Kruskal: S/ 15,093.42 · 542.96 m</span>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:11px; justify-content:center;">
+                        <div class="anim-card card-pad-sm">
+                            <div class="card-kicker">Teórico vs. Realidad en Obra</div>
+                            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:4px;">
+                                <span style="font-size:0.8rem; color:var(--text-muted);">Sin obstáculos (<code>G_base</code>)</span>
+                                <span class="mono" style="font-weight:700; font-size:0.9rem;">S/ 11,803.00</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:4px;">
+                                <span style="font-size:0.84rem; font-weight:800; color:var(--text-heading);">Real UTP (Prim = Kruskal)</span>
+                                <span class="mono" style="font-weight:800; font-size:1.05rem; color:var(--primary);">S/ 15,093.42</span>
+                            </div>
+                        </div>
+
+                        <div class="anim-card card-pad-sm accent-amber">
+                            <div class="card-kicker" style="color:var(--accent-amber);">Impacto de los 3 Obstáculos</div>
+                            <div class="big-stat" style="color:var(--accent-amber); font-size:1.75rem;">+27.88% en costo</div>
+                            <div class="stat-sub">+S/ 3,290.42 soles y <strong>+20.36% más cable</strong> (+91.84 m) por rodear muros.</div>
+                        </div>
+
+                        <div class="anim-card card-pad-sm accent-green">
+                            <div class="card-kicker" style="color:var(--accent-green);">Efecto del Desempate</div>
+                            <div class="big-stat" style="color:var(--accent-green); font-size:1.65rem;">−5.27 metros</div>
+                            <div class="stat-sub">542.96 m frente a 548.23 m sin priorizar distancia, al mismo costo exacto.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Integrante 5 · Diapositiva 1 de 2</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav" onclick="jumpTo(8)">← Anterior</button>
+                    <button class="btn-slide-nav primary" onclick="jumpTo(10)">Siguiente: Quién Gana en Escala →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 10: INTEGRANTE 5 — PARTE B (BENCHMARK VISUAL CROSSOVER)         -->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-10">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">Bloque 5 · Rendimiento de 25 a 500 Nodos</span>
+                    <span class="speaker-pill"><span class="speaker-dot s5"></span> Integrante 5</span>
+                </div>
+                <h2 class="section-title">
+                    <span class="type-title" data-text="¿Cuándo conviene Kruskal y cuándo gana Prim?"></span><span class="type-cursor"></span>
+                </h2>
+                <p class="section-subtitle">Probamos 12 escenarios (15 repeticiones cada uno) validados con prueba t de Student (p &lt; 0.001).</p>
+            </div>
+
+            <div class="slide-body">
+                <div class="grid-2">
+                    <!-- Resumen claro del punto de cruce -->
+                    <div class="anim-card card-pad-sm">
+                        <div class="card-kicker">El Punto de Cruce (Resumen Tabla 6)</div>
+                        <div class="table-wrap" style="margin-top:4px;">
+                            <table class="ppt-table" style="font-size:0.78rem;">
+                                <thead>
+                                    <tr>
+                                        <th>Escenario</th>
+                                        <th>Cables |E|</th>
+                                        <th>Prim</th>
+                                        <th>Kruskal</th>
+                                        <th>Ganador</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>25 nodos</strong> (baja)</td>
+                                        <td class="mono">45</td>
+                                        <td class="mono">0.017 ms</td>
+                                        <td class="mono"><strong>0.012 ms</strong></td>
+                                        <td><span class="tag-chip chip-amber">Kruskal</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>100 nodos</strong> (baja)</td>
+                                        <td class="mono">742</td>
+                                        <td class="mono">0.198 ms</td>
+                                        <td class="mono"><strong>0.182 ms</strong></td>
+                                        <td><span class="tag-chip chip-amber">Kruskal</span></td>
+                                    </tr>
+                                    <tr style="background:#eff6ff;">
+                                        <td><strong>100 nodos</strong> (media)</td>
+                                        <td class="mono">1,980</td>
+                                        <td class="mono"><strong>0.407 ms</strong></td>
+                                        <td class="mono">0.495 ms</td>
+                                        <td><span class="tag-chip chip-blue">★ Cruce: Prim</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>250 nodos</strong> (alta)</td>
+                                        <td class="mono">23,344</td>
+                                        <td class="mono"><strong>6.34 ms</strong></td>
+                                        <td class="mono">9.76 ms</td>
+                                        <td><span class="tag-chip chip-blue">Prim</span></td>
+                                    </tr>
+                                    <tr style="background:#ecfdf5;">
+                                        <td><strong>500 nodos</strong> (alta)</td>
+                                        <td class="mono"><strong>93,562</strong></td>
+                                        <td class="mono"><strong>34.48 ms</strong></td>
+                                        <td class="mono">51.78 ms</td>
+                                        <td><span class="tag-chip chip-green">Prim -33.4%</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="callout-banner" style="margin-top:10px; font-size:0.78rem;">
+                            En los <strong>12 escenarios</strong> ambos algoritmos dieron exactamente el <strong>mismo costo mínimo</strong>; la única diferencia es velocidad y memoria.
+                        </div>
+                    </div>
+
+                    <!-- Barras visuales de gran impacto -->
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <div class="anim-card card-pad-sm accent-cyan">
+                            <div class="card-kicker" style="color:var(--accent-cyan);">Caso Extremo: 500 Nodos Densos (93,562 cables)</div>
+                            <div style="font-size:0.8rem; font-weight:700; color:var(--text-heading); margin:8px 0 5px;">⏱️ Tiempo de Ejecución (menor es mejor)</div>
+                            <div class="bar-row">
+                                <span><strong>Prim</strong></span>
+                                <div class="bar-track"><div class="bar-fill prim" style="width:66.6%;"></div></div>
+                                <span class="mono"><strong>34.48 ms</strong></span>
+                            </div>
+                            <div class="bar-row">
+                                <span>Kruskal</span>
+                                <div class="bar-track"><div class="bar-fill kruskal" style="width:100%;"></div></div>
+                                <span class="mono">51.78 ms</span>
+                            </div>
+
+                            <div style="font-size:0.8rem; font-weight:700; color:var(--text-heading); margin:12px 0 5px;">🧠 Memoria Auxiliar RAM (menor es mejor)</div>
+                            <div class="bar-row">
+                                <span><strong>Prim</strong></span>
+                                <div class="bar-track"><div class="bar-fill prim" style="width:6%;"></div></div>
+                                <span class="mono"><strong>430 KB</strong></span>
+                            </div>
+                            <div class="bar-row" style="margin-bottom:0;">
+                                <span>Kruskal</span>
+                                <div class="bar-track"><div class="bar-fill kruskal" style="width:100%;"></div></div>
+                                <span class="mono">8,631 KB</span>
+                            </div>
+                        </div>
+
+                        <div class="anim-card card-pad-sm accent-green">
+                            <div class="card-kicker" style="color:var(--accent-green);">¿Por qué pasa esto?</div>
+                            <p class="card-text" style="font-size:0.81rem;">
+                                <strong>Kruskal</strong> brilla en mapas chicos porque ordena pocos cables rápido. Pero con <strong>93,562 cables</strong>, ordenarlos todos le pesa mucho; <strong>Prim con poda</strong> solo guarda hasta 500 nodos activos, ahorrando <strong>33.4% de tiempo</strong> y <strong>95% de memoria</strong>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Integrante 5 · Fin de Bloque 5</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav" onclick="jumpTo(9)">← Anterior</button>
+                    <button class="btn-slide-nav primary" onclick="jumpTo(11)">Pase a Integrante 6 →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 11: INTEGRANTE 6 — PARTE A (BASADO EN INTEGRANTE 6 PARTE F.DOCX)-->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-11">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">Bloque 6 · Pruebas Ante Fallos y Alzas de Precio</span>
+                    <span class="speaker-pill"><span class="speaker-dot s6"></span> Integrante 6</span>
+                </div>
+                <h2 class="section-title">
+                    <span class="type-title" data-text="¿Qué tan resistente es nuestra red? (Escenarios E1 a E5)"></span><span class="type-cursor"></span>
+                </h2>
+                <p class="section-subtitle">Partiendo del diseño base (S/ 15,093.42), simulamos 5 problemas reales para medir la reacción del algoritmo.</p>
+            </div>
+
+            <div class="slide-body">
+                <div class="grid-5">
+                    <div class="anim-card card-pad-sm accent-green">
+                        <span class="tag-chip chip-green">E1 · Sin Efecto</span>
+                        <div class="big-stat-sm" style="color:var(--accent-green); margin-top:8px;">+0.00%</div>
+                        <div class="card-title" style="font-size:0.88rem; margin-top:4px;">Falla cable no usado</div>
+                        <p class="card-text" style="font-size:0.75rem;">Se cae ruta <code>(0,2)</code> fuera del MST. El diseño y el precio quedan intactos.</p>
+                    </div>
+
+                    <div class="anim-card card-pad-sm accent-amber">
+                        <span class="tag-chip chip-amber">E2 · Reparado</span>
+                        <div class="big-stat-sm" style="color:var(--accent-amber); margin-top:8px;">+3.46%</div>
+                        <div class="card-title" style="font-size:0.88rem; margin-top:4px;">Corte de cable activo</div>
+                        <p class="card-text" style="font-size:0.75rem;">Se corta <code>(4,5)</code>. Repara en <strong>0.024 ms</strong> cambiando 1 tramo (S/ 15,616.39).</p>
+                    </div>
+
+                    <div class="anim-card card-pad-sm accent-amber">
+                        <span class="tag-chip chip-amber">E3 · Ajuste</span>
+                        <div class="big-stat-sm" style="color:var(--accent-amber); margin-top:8px;">+1.65%</div>
+                        <div class="card-title" style="font-size:0.88rem; margin-top:4px;">Sube cruce +50%</div>
+                        <p class="card-text" style="font-size:0.75rem;">Encarece puente <code>(8,9)</code>. Cambia 1 ruta y amortigua el golpe (S/ 15,343.08).</p>
+                    </div>
+
+                    <div class="anim-card card-pad-sm accent-amber">
+                        <span class="tag-chip chip-amber">E4 · Obra Civil</span>
+                        <div class="big-stat-sm" style="color:#ea580c; margin-top:8px;">+6.50%</div>
+                        <div class="card-title" style="font-size:0.88rem; margin-top:4px;">Obra compleja +35%</div>
+                        <p class="card-text" style="font-size:0.75rem;">Busca rutas más simples (cambia 2 tramos) y frena el costo en S/ 16,074.52.</p>
+                    </div>
+
+                    <div class="anim-card card-pad-sm accent-red" style="background:#fef2f2; border-color:#fca5a5;">
+                        <span class="tag-chip chip-red">E5 · CRÍTICO</span>
+                        <div class="big-stat-sm" style="color:var(--accent-red); margin-top:8px;">2 Bloques</div>
+                        <div class="card-title" style="font-size:0.88rem; margin-top:4px; color:#991b1b;">Corte puente A–B</div>
+                        <p class="card-text" style="font-size:0.75rem; color:#7f1d1d;"><strong>Red desconectada</strong> (14/15 cables). El sistema alerta al instante en 0.021 ms.</p>
+                    </div>
+                </div>
+
+                <div class="anim-card card-pad-sm accent-red">
+                    <div class="callout-banner red">
+                        <strong>Lección clave del Escenario E5:</strong> El algoritmo reacciona en <strong>menos de 0.05 ms</strong> cuando existe ruta alterna, pero un árbol mínimo (MST) <strong>no tiene cables de respaldo propios</strong>. Si se bloquean los puentes entre pabellones, la red inevitablemente se divide en dos islas.
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Integrante 6 · Diapositiva 1 de 2</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav" onclick="jumpTo(10)">← Anterior</button>
+                    <button class="btn-slide-nav primary" onclick="jumpTo(12)">Siguiente: Conclusiones y Futuro →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 12: INTEGRANTE 6 — PARTE B (CONCLUSIONES Y FUTURO CLAROS)       -->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-12">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">Bloque 6 · Conclusiones y Próximos Pasos</span>
+                    <span class="speaker-pill"><span class="speaker-dot s6"></span> Integrante 6</span>
+                </div>
+                <h2 class="section-title">
+                    <span class="type-title" data-text="4 Conclusiones Clave y Cómo Mejorar a Futuro"></span><span class="type-cursor"></span>
+                </h2>
+                <p class="section-subtitle">Qué nos deja este estudio en la práctica y hacia dónde debería evolucionar el diseño de redes cableadas.</p>
+            </div>
+
+            <div class="slide-body">
+                <div class="anim-card verdict-banner-box">
+                    <div>
+                        <h3>Veredicto Final del Estudio</h3>
+                        <p><strong>Mismo precio mínimo en todos los casos</strong> (S/ 15,093.42), pero distinto motor según la escala: usa <strong>Kruskal</strong> en redes chicas/dispersas y <strong>Prim con poda</strong> en redes medianas o densas.</p>
+                    </div>
+                    <span class="tag-chip chip-green" style="font-size:0.75rem; padding:6px 13px;">Validado · Prueba t (95%)</span>
+                </div>
+
+                <div class="grid-2">
+                    <div class="anim-card card-pad accent-green">
+                        <div class="card-kicker" style="color:var(--accent-green);">Lo Que Demostramos</div>
+                        <ul class="clean-list">
+                            <li><strong>Presupuesto realista:</strong> Ignorar muros subestima el costo en <strong>+27.88%</strong> y el cable en <strong>+20.36%</strong>.</li>
+                            <li><strong>Desempate inteligente:</strong> Elegir la ruta más corta ante igual precio ahorra <strong>5.27 m gratis</strong>.</li>
+                            <li><strong>Ventaja en redes grandes:</strong> Prim reduce el tiempo hasta <strong>33.4%</strong> y usa <strong>95% menos memoria RAM</strong> (430 KB vs. 8.6 MB).</li>
+                            <li><strong>Validez controlada:</strong> Semilla fija, 15 repeticiones, precios reales de Lima y límites claros (no limita puertos por nodo).</li>
+                        </ul>
+                    </div>
+
+                    <div class="anim-card card-pad accent-purple">
+                        <div class="card-kicker" style="color:var(--accent-purple);">Trabajo Futuro (3 Mejoras Concretas)</div>
+                        <ul class="clean-list">
+                            <li><strong>1. Árbol de Steiner Rectilíneo:</strong> Permitir cajas de empalme en esquinas de pasillos sin sensores para acortar aún más el cableado.</li>
+                            <li><strong>2. Redes 2-Arista-Conexas (Anillos):</strong> Agregar cables de respaldo en los puentes entre pabellones para resistir cortes sin perder conexión.</li>
+                            <li><strong>3. Actualización Dinámica en Vivo:</strong> Recalcular el árbol automáticamente si un sensor IoT reporta falla de enlace en tiempo real.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Integrante 6 · Fin de Bloque 6</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav" onclick="jumpTo(11)">← Anterior</button>
+                    <button class="btn-slide-nav primary" onclick="jumpTo(13)">Ver Integrantes del Equipo →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 13: APARTADO DEDICADO DE NOMBRES DEL EQUIPO Y CIERRE            -->
+    <!-- ===================================================================== -->
+    <section class="section" id="sec-13">
+        <div class="section-container">
+            <div class="section-header-compact">
+                <div class="badge-strip">
+                    <span class="section-badge-pill">Créditos y Equipo de Investigación · Grupo 3</span>
+                    <span class="speaker-pill"><span class="speaker-dot"></span> Universidad Tecnológica del Perú (UTP)</span>
+                </div>
+                <h2 class="section-title">
+                    <span class="type-title" data-text="Equipo de Investigación — Grupo 3 (UTP Lima)"></span><span class="type-cursor"></span>
+                </h2>
+                <p class="section-subtitle">Curso: Análisis y Diseño de Algoritmos · Semana 15 (Práctica Calificada 3) · Facultad de Ingeniería.</p>
+            </div>
+
+            <div class="slide-body">
+                <div class="anim-card card-pad accent-purple" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <div class="card-kicker" style="color:var(--accent-purple);">Docente y Asesor Metodológico</div>
+                        <div class="card-title" style="font-size:1.25rem; margin-bottom:2px;">Mg. José Luis Cuya Cámara</div>
+                        <div class="mono" style="font-size:0.78rem; color:var(--text-muted);">ORCID: 0000-0003-3412-6608 · C15274@utp.edu.pe</div>
+                    </div>
+                    <span class="tag-chip chip-purple" style="padding:6px 14px; font-size:0.76rem;">Conceptualización y Validación</span>
+                </div>
+
+                <div class="anim-card card-pad">
+                    <div class="card-kicker">Estudiantes Autores del Estudio (Orden Alfabético / Grupo 3)</div>
+                    <div class="grid-3" style="margin-top:10px;">
+                        <div style="background:var(--bg-subtle); border:1px solid var(--border-light); border-radius:10px; padding:12px 14px;">
+                            <div style="font-weight:800; color:var(--text-heading); font-size:0.9rem;">George William Vivanco Rojas</div>
+                            <div class="mono" style="font-size:0.71rem; color:var(--text-muted); margin-top:3px;">ORCID: 0009-0009-4022-2402</div>
+                        </div>
+                        <div style="background:var(--bg-subtle); border:1px solid var(--border-light); border-radius:10px; padding:12px 14px;">
+                            <div style="font-weight:800; color:var(--text-heading); font-size:0.9rem;">Jheremy Chihuantito</div>
+                            <div class="mono" style="font-size:0.71rem; color:var(--text-muted); margin-top:3px;">ORCID: 0009-2992-3859-1805</div>
+                        </div>
+                        <div style="background:var(--bg-subtle); border:1px solid var(--border-light); border-radius:10px; padding:12px 14px;">
+                            <div style="font-weight:800; color:var(--text-heading); font-size:0.9rem;">Sebastián Béjar Aguilar</div>
+                            <div class="mono" style="font-size:0.71rem; color:var(--text-muted); margin-top:3px;">ORCID: 0009-0004-8830-2276</div>
+                        </div>
+                        <div style="background:var(--bg-subtle); border:1px solid var(--border-light); border-radius:10px; padding:12px 14px;">
+                            <div style="font-weight:800; color:var(--text-heading); font-size:0.9rem;">Ruth Thalia Romero Trigoso</div>
+                            <div class="mono" style="font-size:0.71rem; color:var(--text-muted); margin-top:3px;">ORCID: 0009-0001-1407-1251</div>
+                        </div>
+                        <div style="background:var(--bg-subtle); border:1px solid var(--border-light); border-radius:10px; padding:12px 14px;">
+                            <div style="font-weight:800; color:var(--text-heading); font-size:0.9rem;">Harold Stephano Aguilar Racchumi</div>
+                            <div class="mono" style="font-size:0.71rem; color:var(--text-muted); margin-top:3px;">ORCID: 0009-0008-1815-1444</div>
+                        </div>
+                        <div style="background:var(--bg-subtle); border:1px solid var(--border-light); border-radius:10px; padding:12px 14px;">
+                            <div style="font-weight:800; color:var(--text-heading); font-size:0.9rem;">Andrea Céspedes Shuña</div>
+                            <div class="mono" style="font-size:0.71rem; color:var(--text-muted); margin-top:3px;">ORCID: 0009-0005-6242-4049</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="anim-card card-pad-sm" style="text-align:center; background:var(--primary-soft); border-color:#bfdbfe;">
+                    <strong style="color:var(--primary-dark); font-size:1.05rem;">¡Muchas gracias por su atención! Quedamos atentos a sus preguntas.</strong>
+                </div>
+            </div>
+
+            <div class="section-footer-bar">
+                <span class="footer-meta">Aplicación Java: RedSensoresMST · Semilla LCG 20261115</span>
+                <div class="footer-btns">
+                    <button class="btn-slide-nav" onclick="jumpTo(12)">← Anterior</button>
+                    <button class="btn-slide-nav primary" onclick="jumpTo(0)">Volver a la Portada ↑</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- JAVASCRIPT: ANIMACIONES COREOGRAFIADAS + PLANO INTERACTIVO UTP        -->
+    <!-- ===================================================================== -->
+    <script>
+        const sections = document.querySelectorAll('.section');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const progressBar = document.getElementById('reading-progress');
+        const slideCounter = document.getElementById('slide-counter');
+
+        let currentIndex = 0;
+        let isTransitioning = false;
+        let activeTypingTimers = [];
+
+        const slideToGroup = [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7];
+
+        function clearAllTimers() {
+            activeTypingTimers.forEach(t => { clearInterval(t); clearTimeout(t); });
+            activeTypingTimers = [];
+            document.querySelectorAll('.type-cursor').forEach(c => {
+                c.style.display = 'none';
+                c.style.opacity = '0';
+            });
+        }
+
+        function playChoreography(section) {
+            clearAllTimers();
+
+            const badgeStrip = section.querySelector('.badge-strip');
+            const titleEl = section.querySelector('.type-title');
+            const cursorEl = section.querySelector('.type-cursor');
+            const subtitleEl = section.querySelector('.section-subtitle, .hero-hook-desc');
+            const cards = section.querySelectorAll('.anim-card');
+            const footerBar = section.querySelector('.section-footer-bar, .hero-action-row');
+
+            if (badgeStrip) {
+                badgeStrip.style.opacity = '0';
+                badgeStrip.style.transform = 'translateY(-8px)';
+                badgeStrip.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+            }
+            if (cursorEl) {
+                cursorEl.style.display = 'inline-block';
+                cursorEl.style.opacity = '1';
+            }
+            if (subtitleEl) {
+                subtitleEl.style.opacity = '0';
+                subtitleEl.style.transform = 'translateY(10px)';
+                subtitleEl.style.transition = 'all 0.36s cubic-bezier(0.16, 1, 0.3, 1)';
+            }
+            cards.forEach(card => {
+                card.classList.remove('card-revealed');
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(24px) scale(0.97)';
+                card.style.filter = 'blur(4px)';
+            });
+            if (footerBar) {
+                footerBar.style.opacity = '0';
+                footerBar.style.transform = 'translateY(10px)';
+                footerBar.style.transition = 'all 0.35s ease';
+            }
+
+            activeTypingTimers.push(setTimeout(() => {
+                if (badgeStrip) { badgeStrip.style.opacity = '1'; badgeStrip.style.transform = 'translateY(0)'; }
+            }, 40));
+
+            activeTypingTimers.push(setTimeout(() => {
+                if (!titleEl) return;
+                const targetText = titleEl.getAttribute('data-text') || '';
+                titleEl.textContent = '';
+                let charIdx = 0;
+
+                const typeTimer = setInterval(() => {
+                    if (charIdx <= targetText.length) {
+                        titleEl.textContent = targetText.slice(0, charIdx);
+                        charIdx++;
+                    } else {
+                        clearInterval(typeTimer);
+                        if (cursorEl) {
+                            cursorEl.style.transition = 'opacity 0.18s ease';
+                            cursorEl.style.opacity = '0';
+                            activeTypingTimers.push(setTimeout(() => { cursorEl.style.display = 'none'; }, 190));
+                        }
+                        activeTypingTimers.push(setTimeout(() => {
+                            if (subtitleEl) { subtitleEl.style.opacity = '1'; subtitleEl.style.transform = 'translateY(0)'; }
+                        }, 45));
+
+                        cards.forEach((card, idx) => {
+                            activeTypingTimers.push(setTimeout(() => {
+                                card.classList.add('card-revealed');
+                                card.style.transition = 'all 0.46s cubic-bezier(0.16, 1, 0.3, 1)';
+                                card.style.opacity = '1';
+                                card.style.transform = 'translateY(0) scale(1)';
+                                card.style.filter = 'blur(0px)';
+                                if (section.id === 'sec-9' && idx === 0) drawUTPMap();
+                            }, 100 + (idx * 100)));
+                        });
+
+                        activeTypingTimers.push(setTimeout(() => {
+                            if (footerBar) { footerBar.style.opacity = '1'; footerBar.style.transform = 'translateY(0)'; }
+                        }, 120 + (cards.length * 100) + 50));
+                    }
+                }, 10);
+                activeTypingTimers.push(typeTimer);
+            }, 120));
+        }
+
+        function updateNavLinks(index) {
+            const activeGroup = slideToGroup[index] ?? 0;
+            navLinks.forEach(link => {
+                link.classList.toggle('active', parseInt(link.getAttribute('data-group'), 10) === activeGroup);
+            });
+            progressBar.style.width = `${(index / (sections.length - 1)) * 100}%`;
+            slideCounter.textContent = `${String(index + 1).padStart(2, '0')} / ${String(sections.length).padStart(2, '0')}`;
+        }
+
+        function jumpTo(index) {
+            if (index < 0 || index >= sections.length) return;
+            currentIndex = index;
+            isTransitioning = true;
+            sections[index].scrollIntoView({ behavior: 'smooth' });
+            updateNavLinks(index);
+            playChoreography(sections[index]);
+            setTimeout(() => { isTransitioning = false; }, 540);
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+            else document.exitFullscreen?.().catch(() => {});
+        }
+
+        window.addEventListener('wheel', (e) => {
+            if (window.innerWidth <= 1024) return;
+            if (isTransitioning) { e.preventDefault(); return; }
+            if (Math.abs(e.deltaY) < 22) return;
+            e.preventDefault();
+            if (e.deltaY > 0 && currentIndex < sections.length - 1) jumpTo(currentIndex + 1);
+            else if (e.deltaY < 0 && currentIndex > 0) jumpTo(currentIndex - 1);
+        }, { passive: false });
+
+        window.addEventListener('keydown', (e) => {
+            if (['ArrowDown', 'ArrowRight', 'PageDown', ' '].includes(e.key)) {
+                e.preventDefault();
+                if (currentIndex < sections.length - 1) jumpTo(currentIndex + 1);
+            } else if (['ArrowUp', 'ArrowLeft', 'PageUp'].includes(e.key)) {
+                e.preventDefault();
+                if (currentIndex > 0) jumpTo(currentIndex - 1);
+            } else if (e.key === 'Home') { e.preventDefault(); jumpTo(0); }
+            else if (e.key === 'End') { e.preventDefault(); jumpTo(sections.length - 1); }
+            else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+        });
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !isTransitioning) {
+                    const idx = parseInt(entry.target.id.replace('sec-', ''), 10);
+                    if (!isNaN(idx) && idx !== currentIndex) {
+                        currentIndex = idx;
+                        updateNavLinks(idx);
+                        playChoreography(entry.target);
+                    }
+                }
+            });
+        }, { threshold: 0.55 });
+        sections.forEach(sec => observer.observe(sec));
+
+        // ==================== PLANO INTERACTIVO CAMPUS UTP ====================
+        const utpNodes = [
+            { id: 0, code: 'GW-00', x: 20, y: 60, gw: true },
+            { id: 1, code: 'S-01', x: 35, y: 95 },
+            { id: 2, code: 'S-02', x: 60, y: 98 },
+            { id: 3, code: 'S-03', x: 55, y: 72 },
+            { id: 4, code: 'S-04', x: 40, y: 35 },
+            { id: 5, code: 'S-05', x: 22, y: 20 },
+            { id: 6, code: 'S-06', x: 78, y: 28 },
+            { id: 7, code: 'S-07', x: 92, y: 65 },
+            { id: 8, code: 'S-08', x: 95, y: 96 },
+            { id: 9, code: 'S-09', x: 125, y: 95 },
+            { id: 10, code: 'S-10', x: 122, y: 62 },
+            { id: 11, code: 'S-11', x: 115, y: 25 },
+            { id: 12, code: 'S-12', x: 152, y: 32 },
+            { id: 13, code: 'S-13', x: 158, y: 64 },
+            { id: 14, code: 'S-14', x: 155, y: 94 },
+            { id: 15, code: 'S-15', x: 172, y: 80 }
+        ];
+
+        const utpObstacles = [
+            { xMin: 64, yMin: 42, xMax: 82, yMax: 84, label: 'Ascensores' },
+            { xMin: 102, yMin: 38, xMax: 114, yMax: 82, label: 'Ducto MT' },
+            { xMin: 134, yMin: 44, xMax: 146, yMax: 80, label: 'Patio' }
+        ];
+
+        const utpMstEdges = [
+            { u: 1, v: 2, cost: 'S/ 727.50' }, { u: 2, v: 3, cost: 'S/ 796.25' },
+            { u: 4, v: 5, cost: 'S/ 821.94' }, { u: 7, v: 8, cost: 'S/ 907.00' },
+            { u: 0, v: 4, cost: 'S/ 963.50' }, { u: 9, v: 10, cost: 'S/ 987.75' },
+            { u: 8, v: 9, cost: 'S/ 1,034.22' }, { u: 9, v: 14, cost: 'S/ 1,051.74' },
+            { u: 13, v: 14, cost: 'S/ 1,056.71' }, { u: 6, v: 11, cost: 'S/ 1,093.00', bridge: true },
+            { u: 0, v: 3, cost: 'S/ 1,098.75' }, { u: 11, v: 12, cost: 'S/ 1,117.50' },
+            { u: 12, v: 13, cost: 'S/ 1,118.90' }, { u: 14, v: 15, cost: 'S/ 1,125.00', tieWinner: true },
+            { u: 4, v: 6, cost: 'S/ 1,193.66' }
+        ];
+
+        const utpCandidateBg = [[0,1],[0,2],[0,5],[1,3],[3,4],[5,6],[6,7],[2,8],[8,14],[10,11],[12,15],[13,15]];
+        const utpBlockedBase = [[3,7],[3,6],[7,10],[7,11],[10,13],[10,12],[11,13],[4,7],[6,10]];
+
+        let currentMapMode = 'mst';
+        let visibleEdgeCount = utpMstEdges.length;
+        let mapAnimInterval = null;
+
+        function setMapMode(mode) {
+            if (mapAnimInterval) { clearInterval(mapAnimInterval); mapAnimInterval = null; }
+            currentMapMode = mode;
+            visibleEdgeCount = utpMstEdges.length;
+            document.querySelectorAll('.btn-map-mode:not(.btn-anim)').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById(`map-btn-${mode}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            const caption = document.getElementById('map-caption');
+            if (mode === 'mst') { caption.style.color = 'var(--primary)'; caption.textContent = 'Prim = Kruskal: S/ 15,093.42 · 542.96 m'; }
+            else if (mode === 'tie') { caption.style.color = 'var(--accent-green)'; caption.textContent = 'Gana (14,15) 32.06 m vs (13,15) 37.33 m → Ahorra 5.27 m'; }
+            else if (mode === 'base') { caption.style.color = 'var(--accent-amber)'; caption.textContent = '9 rutas directas bloqueadas → +27.88% sobrecosto real'; }
+            else if (mode === 'e5') { caption.style.color = 'var(--accent-red)'; caption.textContent = 'Corte puente A–B → Red partida en 2 bloques aislados'; }
+            drawUTPMap();
+        }
+
+        function animateUTPMst() {
+            setMapMode('mst');
+            visibleEdgeCount = 0;
+            drawUTPMap();
+            const caption = document.getElementById('map-caption');
+            mapAnimInterval = setInterval(() => {
+                visibleEdgeCount++;
+                const e = utpMstEdges[visibleEdgeCount - 1];
+                caption.textContent = `Cable ${visibleEdgeCount}/15: (${utpNodes[e.u].code}–${utpNodes[e.v].code}) · ${e.cost}`;
+                drawUTPMap();
+                if (visibleEdgeCount >= utpMstEdges.length) {
+                    clearInterval(mapAnimInterval);
+                    mapAnimInterval = null;
+                    caption.textContent = 'MST completo: 15 cables · S/ 15,093.42 · 542.96 m';
+                }
+            }, 240);
+        }
+
+        function drawUTPMap() {
+            const canvas = document.getElementById('utp-canvas');
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width === 0) return;
+
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+
+            const W = rect.width, H = rect.height, padX = 28, padY = 22;
+            const mapX = x => padX + (x / 180) * (W - padX * 2);
+            const mapY = y => H - padY - (y / 120) * (H - padY * 2);
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(0, 0, W, H);
+
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 0.7;
+            for (let gx = 0; gx <= 180; gx += 30) { ctx.beginPath(); ctx.moveTo(mapX(gx), padY); ctx.lineTo(mapX(gx), H - padY); ctx.stroke(); }
+            for (let gy = 0; gy <= 120; gy += 30) { ctx.beginPath(); ctx.moveTo(padX, mapY(gy)); ctx.lineTo(W - padX, mapY(gy)); ctx.stroke(); }
+
+            utpObstacles.forEach(obs => {
+                const x1 = mapX(obs.xMin), x2 = mapX(obs.xMax), y1 = mapY(obs.yMax), y2 = mapY(obs.yMin);
+                ctx.fillStyle = 'rgba(148, 163, 184, 0.34)';
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = 1.3;
+                ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                ctx.fillStyle = '#334155';
+                ctx.font = '700 9px "Plus Jakarta Sans", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(obs.label, (x1 + x2) / 2, (y1 + y2) / 2 + 3);
+            });
+
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
+            ctx.lineWidth = 1;
+            utpCandidateBg.forEach(([u, v]) => {
+                ctx.beginPath(); ctx.moveTo(mapX(utpNodes[u].x), mapY(utpNodes[u].y)); ctx.lineTo(mapX(utpNodes[v].x), mapY(utpNodes[v].y)); ctx.stroke();
+            });
+
+            if (currentMapMode === 'base') {
+                ctx.save(); ctx.setLineDash([5, 4]); ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 1.8;
+                utpBlockedBase.forEach(([u, v]) => {
+                    ctx.beginPath(); ctx.moveTo(mapX(utpNodes[u].x), mapY(utpNodes[u].y)); ctx.lineTo(mapX(utpNodes[v].x), mapY(utpNodes[v].y)); ctx.stroke();
+                });
+                ctx.restore();
+            }
+
+            for (let i = 0; i < visibleEdgeCount; i++) {
+                const e = utpMstEdges[i], n1 = utpNodes[e.u], n2 = utpNodes[e.v];
+                if (currentMapMode === 'e5' && e.bridge) {
+                    ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2.5;
+                    ctx.beginPath(); ctx.moveTo(mapX(n1.x), mapY(n1.y)); ctx.lineTo(mapX(n2.x), mapY(n2.y)); ctx.stroke(); ctx.restore();
+                    ctx.fillStyle = '#dc2626'; ctx.font = '800 11px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+                    ctx.fillText('✕ CORTE E5', (mapX(n1.x) + mapX(n2.x)) / 2, (mapY(n1.y) + mapY(n2.y)) / 2 - 6);
+                    continue;
+                }
+                let strokeCol = '#1d4ed8', lw = 2.7;
+                if (currentMapMode === 'tie' && e.tieWinner) { strokeCol = '#059669'; lw = 3.8; }
+                else if (currentMapMode === 'e5') strokeCol = (e.u <= 6 && e.v <= 6) ? '#2563eb' : '#7c3aed';
+
+                ctx.strokeStyle = strokeCol; ctx.lineWidth = lw;
+                ctx.beginPath(); ctx.moveTo(mapX(n1.x), mapY(n1.y)); ctx.lineTo(mapX(n2.x), mapY(n2.y)); ctx.stroke();
+            }
+
+            if (currentMapMode === 'tie') {
+                ctx.save(); ctx.setLineDash([4, 3]); ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2.6;
+                ctx.beginPath(); ctx.moveTo(mapX(utpNodes[13].x), mapY(utpNodes[13].y)); ctx.lineTo(mapX(utpNodes[15].x), mapY(utpNodes[15].y)); ctx.stroke(); ctx.restore();
+            }
+
+            utpNodes.forEach(n => {
+                const cx = mapX(n.x), cy = mapY(n.y);
+                ctx.beginPath(); ctx.arc(cx, cy, n.gw ? 7.5 : 5.8, 0, Math.PI * 2);
+                ctx.fillStyle = n.gw ? '#dc2626' : (currentMapMode === 'e5' && n.id >= 7 ? '#7c3aed' : '#059669');
+                ctx.fill(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.fillStyle = '#0f172a'; ctx.font = '700 9.5px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+                ctx.fillText(n.code, cx, cy - 9);
+            });
+        }
+
+        window.addEventListener('resize', drawUTPMap);
+        window.addEventListener('DOMContentLoaded', () => {
+            updateNavLinks(0);
+            playChoreography(sections[0]);
+            drawUTPMap();
+        });
+    </script>
+</body>
+</html>
